@@ -5,7 +5,7 @@ import utils
 
 
 class Config:
-    refresh_rate: int = 25
+    delay_update_ms: int = 30
     chart_points: int = 70
 
     hw_controller_current_limit: int = 135

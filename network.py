@@ -8,6 +8,7 @@ import urllib3
 # curl 'http://127.0.0.1:2002/vesc/local/can/scan'
 # curl 'http://127.0.0.1:2002/vesc/local/command/COMM_FW_VERSION'
 # curl 'http://127.0.0.1:2002/vesc/local/command/COMM_GET_VALUES'
+# curl -H "Content-Type: application/json" -X POST 'http://192.168.15.30:2002/vescs/command/COMM_GET_VALUES' --data '{"vesc_ids": [-1, 15]}'
 from config import Config
 
 ENABLE_UART_DEBUG = False
@@ -57,6 +58,22 @@ class Network:
             controller_id = "local"
         #req = Network.session.get(f"{Config.serial_vesc_api}/vesc/{controller_id}/command/COMM_GET_VALUES", stream=True, verify=False)
         response = Network.http.request('GET', f"{Config.serial_vesc_api}/vesc/{controller_id}/command/COMM_GET_VALUES")
+        if response.status != 200:
+            return None
+
+        answ = json.loads(response.data)
+
+        if answ["success"]:
+            return answ["data"]
+        else:
+            return None
+
+    @staticmethod
+    def COMM_GET_VALUES_multi(controller_ids: list) -> dict:
+        data = json.dumps({"vesc_ids": controller_ids})
+        response = Network.http.request("POST", f"{Config.serial_vesc_api}/vescs/command/COMM_GET_VALUES",
+                                        headers={'Content-Type': 'application/json'},
+                                        body=data)
         if response.status != 200:
             return None
 

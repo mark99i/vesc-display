@@ -49,7 +49,7 @@ class GUIApp:
     watt_kmh: QLineEdit = None
 
     esc_a_element: QTextEdit = None
-    esc_b_element: QTextEdit = None
+    esc_b_element: QPlainTextEdit = None
 
     date: QLineEdit = None
     time: QLineEdit = None
@@ -101,23 +101,10 @@ class GUIApp:
 
         self.esc_b_element.lower()
         self.esc_a_element.lower()
-        self.esc_a_element.setWordWrapMode(QTextOption.ManualWrap)
-        self.esc_b_element.setWordWrapMode(QTextOption.ManualWrap)
-        self.esc_a_element.setAcceptRichText(False)
-        self.esc_a_element.setContextMenuPolicy(Qt.NoContextMenu)
-        self.esc_a_element.setReadOnly(True)
-        self.esc_a_element.setUndoRedoEnabled(False)
-        self.esc_b_element.setAcceptRichText(False)
-        self.esc_b_element.setContextMenuPolicy(Qt.NoContextMenu)
-        self.esc_b_element.setReadOnly(True)
-        self.esc_b_element.setUndoRedoEnabled(False)
 
     def show(self):
         self.ui.show()
         self.app.exec()
-        self.ui.setFocus(True)
-        self.ui.activateWindow()
-        self.ui.raise_()
 
     def on_click_close_app(self):
         self.ui.destroy()

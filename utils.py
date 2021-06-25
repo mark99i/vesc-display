@@ -19,17 +19,10 @@ def get_script_dir(follow_symlinks=True):
 
 
 chart_current_pen = None
-ser = [0, 0, 10, 60, 200, 700, 2000, 4000, 4000, 4000, 4000, 3500, 3700, 3600, 3000, 3200, 3400, 3700, 2000, 2400, 2300,
-       2350, 2100, 1800, 1900, 500, 600, 1000, 1200, 1300, 2000, 1900, 1940, 1930, 1800, 500, 200, 200, 100, 50, 0, 0,
-       0, 0, 10, 60, 100, 500, 1000, 3500, 3900, 3960, 4000, 3900, 3930, 3500, 3200, 3000, 2900, 2500, 2000, 2000, 2000,
-       1800, 1500, 1500, 1500, 1900, 3000, 3700, 3700]
 
 def setup_empty_chart(chart:QChart):
     series = QLineSeries()
-
-    global ser
-    for i in range(1, len(ser)):
-        series.append(i, ser[i-1])
+    series.append(0, 0)
 
     global chart_current_pen
     chart_current_pen = QPen()
@@ -45,10 +38,6 @@ def setup_empty_chart(chart:QChart):
 
 def set_chart_series(chart: QChart, arr: list):
     series = QLineSeries()
-
-    #global ser
-    #arr = ser
-    #print(arr)
 
     for i in range(1, len(arr)):
         series.append(i, arr[i-1])
