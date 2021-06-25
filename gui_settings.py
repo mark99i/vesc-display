@@ -234,7 +234,7 @@ class GUISettings:
 
         print("editing", parameter_name)
 
-        if   parameter_name == "refresh_rate" or parameter_name == "esc_b_id":
+        if   parameter_name == "refresh_rate" or parameter_name == "esc_b_id" or parameter_name == "chart_points" or parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1)
         elif parameter_name == "hw_controller_current_limit":
             self.open_int_mod(parameter_name, 5)

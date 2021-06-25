@@ -135,7 +135,7 @@ class GUIApp:
         self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
 
         power_str = f'{state.esc_a_state.phase_current + state.esc_b_state.phase_current}A / ' \
-                    f'{state.esc_a_state.power + state.esc_b_state.power}W / ' \
+                    f'{state.full_power}W / ' \
                     f'{state.esc_a_state.battery_current + state.esc_b_state.battery_current}A'
         self.main_power.setText(power_str)
 

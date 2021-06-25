@@ -6,8 +6,11 @@ import utils
 
 class Config:
     refresh_rate: int = 25
+    chart_points: int = 70
+
     hw_controller_current_limit: int = 135
 
+    switch_a_b_esc: int = 0
     esc_b_id: int = -1
 
     battery_capacity_wh: int = 18200

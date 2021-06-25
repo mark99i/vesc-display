@@ -46,8 +46,9 @@ def setup_empty_chart(chart:QChart):
 def set_chart_series(chart: QChart, arr: list):
     series = QLineSeries()
 
-    global ser
-    arr = ser
+    #global ser
+    #arr = ser
+    #print(arr)
 
     for i in range(1, len(arr)):
         series.append(i, arr[i-1])
