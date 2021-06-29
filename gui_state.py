@@ -17,30 +17,31 @@ class ESCState:
 
     load_percent: int = 0
 
-    def parse_from_json(self, json: dict, controller_a_b: str = "X"):
+    erpm: float = 0
+
+    def parse_from_json(self, json: dict, controller_a_b: str = "?"):
         self.controller_a_b = controller_a_b
         self.phase_current = int(json["avg_motor_current"])
-        self.power = int(json["watt_hours"])
-
-        #if self.power > 42949:
-        #    self.power -= 42949673
 
         if self.phase_current > 42949:
             self.phase_current -= 42949673
 
-        #print(self.controller_a_b, self.phase_current)
-
-        self.battery_current = int(json["avg_input_current"])
+        self.battery_current = json["avg_input_current"]
         self.voltage = json["voltage"]
 
         if self.battery_current > 42949:
             self.battery_current -= 42949673
-        # print(self.controller_a_b, self.battery_current)
+
+        self.power = int(self.battery_current * self.voltage)
+
+        self.battery_current = int(self.battery_current)
 
         self.temperature = json["temp_fet_filtered"]
+        self.erpm = json["rpm"]
 
         if self.phase_current != 0:
             self.load_percent = int( 100 / (float(Config.hw_controller_current_limit) / float(self.phase_current)) )
+            if self.load_percent < 0: self.load_percent *= -1
         else:
             self.load_percent = 0
 
@@ -59,8 +60,8 @@ class GUIState:
     chart_current: list = []
     chart_speed: list = []
 
-    esc_a_state = ESCState("X")
-    esc_b_state = ESCState("X")
+    esc_a_state = ESCState("?")
+    esc_b_state = ESCState("?")
 
     full_power: int = 0
 
@@ -68,6 +69,14 @@ class GUIState:
 
     last_update_time_ms: int = 0
     refresh_interval_ms: int = 30
+
+    UART_STATUS_WORKING_SUCCESS = "success"
+    UART_STATUS_WORKING_ERROR = "tmp_error"
+    UART_STATUS_ERROR = "error"
+    UART_STATUS_UNKNOWN = "unkn"
+
+    uart_status = UART_STATUS_UNKNOWN
+
 
 
 

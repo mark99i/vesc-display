@@ -13,7 +13,10 @@ class Config:
     switch_a_b_esc: int = 0
     esc_b_id: int = -1
 
-    battery_capacity_wh: int = 18200
+    enable_uart_debug: int = 0
+
+    motor_magnets: int = 30
+    wheel_diameter: int = 250
 
     serial_vesc_api: str = "http://127.0.0.1:2002"
     serial_port: str = "/dev/ttyUSB0"

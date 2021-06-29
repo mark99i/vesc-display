@@ -1,10 +1,11 @@
 import inspect
 import os
 import sys
+import subprocess
 from threading import Thread
 
 from PyQt5.QtChart import QChart, QLineSeries
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QPen, QColor
 
 
@@ -48,42 +49,39 @@ def set_chart_series(chart: QChart, arr: list):
     chart.addSeries(series)
 
 
-class QTComm(QObject):
-    closeApp = None
-    callback = None
+class QTCommunication:
+    # noinspection PyUnresolvedReferences
+    class QTBG(QThread):
+        finish_signal = pyqtSignal(object)
 
-    def __init__(self):
-        super().__init__()
-        self.closeApp = pyqtSignal(object)
+        worker = None
+        arg = None
 
-    def push_data(self, state):
-        self.closeApp.emit(state)
+        def __init__(self, parent=None):
+            QThread.__init__(self, parent)
 
-    def setCallback(self, callback):
-        self.callback = callback
-        self.closeApp.connect(self.on_update)
+        def setData(self, worker, callback, arg):
+            self.worker = worker
+            self.finish_signal.connect(callback)
+            self.arg = arg
 
-    @pyqtSlot(object)
-    def on_update(self, state):
-        if self.callback is not None:
-            self.callback(state)
+        def run(self):
+            try:
+                result = self.worker(self.arg)
+            except Exception as e:
+                if "takes 0 positional arguments but 1 was given" in str(e):
+                    result = self.worker()
+                else:
+                    print("bg exc:",e)
+                    raise e
+            self.finish_signal.emit(result)
+            return
 
-class QTBG(Thread):
-    callback = None
-    need_run = None
-
-    def __init__(self, need_run, callback):
-        Thread.__init__(self)
-        self.callback = callback
-        self.need_run = need_run
-
-    def run(self):
-        self.callback(self.need_run())
-
-def run_func_in_background(need_run, callback):
-    comm = QTComm()
-    comm.setCallback(callback)
-    QTBG(need_run, comm.push_data).start()
+    @staticmethod
+    def run_func_in_background(parent, need_run, callback, push_args: object = None):
+        thread = QTCommunication.QTBG(parent)
+        thread.setData(need_run, callback, push_args)
+        thread.start()
 
 def get_list_serial_ports() -> list:
     import serial.tools.list_ports
@@ -94,4 +92,18 @@ def get_list_serial_ports() -> list:
         result.append(str(port))
     return result
 
+def get_systemd_status(service: str) -> str:
+    if sys.platform == "win32":
+        return "unkn (win32, running)"
 
+    cmd = f"systemctl status {service} | grep active | xargs | cut -d' ' -f 2-3"
+    result = subprocess.check_output(["bash", "-c", cmd])
+    return result[:-1]
+
+def restart_systemd_status(service: str) -> None:
+    if sys.platform == "win32":
+        return None
+
+    cmd = f"systemctl restart {service}"
+    subprocess.check_output(["bash", "-c", cmd])
+    return None

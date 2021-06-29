@@ -19,6 +19,7 @@ comm.setCallback(ui.callback_update_gui)
 
 thread = data_updater.WorkerThread(comm.push_data)
 thread.start()
+ui.data_updater_thread = thread
 ui.show()
 thread.stopped_flag = True
 

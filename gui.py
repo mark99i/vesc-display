@@ -17,6 +17,9 @@ from gui_settings import GUISettings
 from gui_state import GUIState, ESCState
 
 # noinspection PyUnresolvedReferences
+from service_status import GUIServiceState
+
+
 class Communicate(QObject):
     closeApp = pyqtSignal(GUIState)
 
@@ -39,6 +42,7 @@ class GUIApp:
     ui: QMainWindow = None
 
     settings: GUISettings = None
+    service_status: GUIServiceState = None
 
     main_speed_lcd: QLCDNumber = None
     chart: QChart = None
@@ -56,6 +60,9 @@ class GUIApp:
 
     settings_button: QPushButton = None
     close_button: QPushButton = None
+    uart_button: QPushButton = None
+
+    data_updater_thread: data_updater.WorkerThread = None
 
     last_time = 0
     reqs = 0
@@ -66,6 +73,7 @@ class GUIApp:
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         self.settings = GUISettings()
+        self.service_status = GUIServiceState(self.ui)
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
@@ -102,6 +110,10 @@ class GUIApp:
         self.esc_b_element.lower()
         self.esc_a_element.lower()
 
+        self.uart_button = self.ui.uart_button
+        self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);") # pink
+        self.uart_button.clicked.connect(self.on_click_uart_settings)
+
     def show(self):
         self.ui.show()
         self.app.exec()
@@ -114,8 +126,13 @@ class GUIApp:
     def on_click_open_settings(self):
         self.settings.show()
 
+    def on_click_uart_settings(self):
+        self.service_status.show()
+
     def callback_update_gui(self, state: GUIState):
         if self.settings.ui.isVisible():
+            return
+        if self.service_status.ui.isVisible():
             return
 
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
@@ -136,6 +153,15 @@ class GUIApp:
         lt = time.localtime()
         self.date.setText(time.strftime("%d.%m.%y", lt))
         self.time.setText(time.strftime("%H:%M:%S", lt))
+
+        if   state.uart_status == GUIState.UART_STATUS_ERROR:
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);") # red
+        elif state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 130, 0);") # green
+        elif state.uart_status == GUIState.UART_STATUS_WORKING_ERROR:
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);")  # blue
+        elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);") # pink
 
         self.reqs += 1
         if self.last_time < int(time.time()):

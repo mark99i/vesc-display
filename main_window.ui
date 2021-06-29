@@ -65,6 +65,12 @@
       <height>181</height>
      </rect>
     </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="font">
      <font>
       <kerning>false</kerning>
@@ -87,10 +93,10 @@ background: rgba(0,0,0,0.0);</string>
      <enum>QLCDNumber::Flat</enum>
     </property>
     <property name="value" stdset="0">
-     <double>333.000000000000000</double>
+     <double>888.000000000000000</double>
     </property>
     <property name="intValue" stdset="0">
-     <number>333</number>
+     <number>888</number>
     </property>
    </widget>
    <widget class="QChartView" name="chart" native="true">
@@ -101,6 +107,12 @@ background: rgba(0,0,0,0.0);</string>
       <width>331</width>
       <height>261</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
     </property>
     <property name="minimumSize">
      <size>
@@ -168,6 +180,12 @@ border-bottom: none;</string>
       <height>51</height>
      </rect>
     </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="font">
      <font>
       <family>Consolas</family>
@@ -194,6 +212,12 @@ border-bottom: none;</string>
       <width>111</width>
       <height>51</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
     </property>
     <property name="font">
      <font>
@@ -222,6 +246,12 @@ border-bottom: none;</string>
       <height>51</height>
      </rect>
     </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="font">
      <font>
       <family>Consolas</family>
@@ -249,6 +279,12 @@ border-bottom: none;</string>
       <height>31</height>
      </rect>
     </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="font">
      <font>
       <family>Consolas</family>
@@ -275,6 +311,12 @@ border-bottom: none;</string>
       <width>141</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
     </property>
     <property name="font">
      <font>
@@ -391,17 +433,17 @@ text-align: center;</string>
      <bool>true</bool>
     </property>
     <property name="plainText">
-     <string>ESC_A:
+     <string>ESC_B:
 
-PC: 112A
+PC: 999A
 
-P:  1188W
+P:  9999W
 
-BC: 22A
-V:  54.2v
+BC: 999A
+V:  99.9v
 
-L:  120%
-T:  37.2°С</string>
+L:  100%
+T:  99.9°С</string>
     </property>
     <property name="textInteractionFlags">
      <set>Qt::NoTextInteraction</set>
@@ -475,18 +517,71 @@ text-align: center;</string>
     <property name="plainText">
      <string>ESC_A:
 
-PC: 112A
+PC: 999A
 
-P:  1188W
+P:  9999W
 
-BC: 22A
-V:  54.2v
+BC: 99A
+V:  99.9v
 
-L:  120%
-T:  37.2°С</string>
+L:  100%
+T:  99.9°С</string>
     </property>
     <property name="textInteractionFlags">
      <set>Qt::NoTextInteraction</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="uart_button">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>0</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(255, 0, 255);</string>
+    </property>
+    <property name="text">
+     <string>UART</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="gpio_button">
+    <property name="geometry">
+     <rect>
+      <x>330</x>
+      <y>0</y>
+      <width>121</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 100, 0);
+</string>
+    </property>
+    <property name="text">
+     <string>GPIO</string>
     </property>
    </widget>
   </widget>

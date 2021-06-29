@@ -17,9 +17,12 @@ class GUISettingsIntMod(QDialog):
     parameter_val: int = 0
     parameter_name: str = None
 
+    val_min = 0
+    val_max = 0
+
     on_close_change_val = None
 
-    def __init__(self, parent, parameter: str, step: int, on_close_change_val):
+    def __init__(self, parent, parameter: str, step: int, on_close_change_val, val_min: int, val_max: int):
         super().__init__(parent)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);")
@@ -28,6 +31,8 @@ class GUISettingsIntMod(QDialog):
         self.parameter_name = parameter
         self.change_step = step
         self.parameter_val = getattr(Config, parameter)
+        self.val_min = val_min
+        self.val_max = val_max
 
         self.textv = QLineEdit(self)
         self.textv.setStyleSheet("color: rgb(255, 255, 255);")
@@ -74,17 +79,32 @@ class GUISettingsIntMod(QDialog):
         self.cancel.setText("Cancel")
         self.cancel.clicked.connect(self.click_cancel)
 
-        #self.setGeometry(int(640-400*0.5), int(480-200*0.5), 400, 200)
+        self.check_min_max_val_disable_enable_buttons()
         self.show()
+
+    def check_min_max_val_disable_enable_buttons(self):
+        if self.parameter_val <= self.val_min:
+            self.minus.setEnabled(False)
+        else:
+            self.minus.setEnabled(True)
+
+        if self.parameter_val >= self.val_max:
+            self.plus.setEnabled(False)
+        else:
+            self.plus.setEnabled(True)
 
     def click_plus(self):
         self.parameter_val += self.change_step
         self.val.setText(str(self.parameter_val))
+
+        self.check_min_max_val_disable_enable_buttons()
         pass
 
     def click_minus(self):
         self.parameter_val -= self.change_step
         self.val.setText(str(self.parameter_val))
+
+        self.check_min_max_val_disable_enable_buttons()
         pass
 
     def click_ok(self):
@@ -100,36 +120,6 @@ class GUISettingsIntMod(QDialog):
         pass
 
 class GUISettingsScanCan(QDialog):
-    # noinspection PyUnresolvedReferences
-    class Communicate(QObject):
-        closeApp = pyqtSignal(list)
-
-        callback = None
-
-        def push_data(self, state):
-            self.closeApp.emit(state)
-
-        def setCallback(self, callback):
-            self.callback = callback
-            self.closeApp.connect(self.on_update)
-
-        @pyqtSlot(GUIState)
-        def on_update(self, state):
-            if self.callback is not None:
-                self.callback(state)
-
-    class Scan(Thread):
-        callback = None
-
-        def __init__(self, callback):
-            Thread.__init__(self)
-            self.callback = callback
-
-        def run(self):
-            vescs = network.Network.scan_can()
-            self.callback(vescs)
-
-
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowFlag(Qt.FramelessWindowHint)
@@ -153,17 +143,9 @@ class GUISettingsScanCan(QDialog):
         self.close.clicked.connect(self.click_cancel)
         self.close.setDisabled(True)
 
-
-        comm = GUISettingsScanCan.Communicate()
-        comm.setCallback(self.on_scan_ended)
-        GUISettingsScanCan.Scan(comm.push_data).start()
-        #utils.run_func_in_background(self.scan_bus, self.on_scan_ended)
-
-        self.show()
-
-    @staticmethod
-    def scan_bus(self):
-        return network.Network.scan_can()
+    def show(self):
+        utils.QTCommunication.run_func_in_background(self, network.Network.scan_can, self.on_scan_ended)
+        super().show()
 
     def on_scan_ended(self, vescs: list):
         self.close.setDisabled(False)
@@ -171,8 +153,7 @@ class GUISettingsScanCan(QDialog):
         pass
 
     def click_cancel(self):
-        self.on_close_change_val()
-        self.destroy()
+        self.hide()
         pass
 
 class GUISettings:
@@ -212,13 +193,12 @@ class GUISettings:
         for name in conf.keys():
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
 
-    def open_int_mod(self, parameter, step):
+    def open_int_mod(self, parameter, step, val_min, val_max):
         self.opened_change_val = True
-        change_ui = GUISettingsIntMod(self.ui, parameter, step, self.reload_list)
+        change_ui = GUISettingsIntMod(self.ui, parameter, step, self.reload_list, val_min, val_max)
         change_ui.show()
 
     def open_scan_can_bus(self):
-        self.opened_change_val = True
         scan_can = GUISettingsScanCan(self.ui)
         scan_can.show()
         pass
@@ -232,14 +212,24 @@ class GUISettings:
         if ":" in parameter_name:
             parameter_name = parameter_name[0:parameter_name.find(":")]
 
-        print("editing", parameter_name)
-
-        if   parameter_name == "delay_update_ms" or parameter_name == "esc_b_id" or parameter_name == "chart_points" or parameter_name == "switch_a_b_esc":
-            self.open_int_mod(parameter_name, 1)
+        if   parameter_name == "delay_update_ms":
+            self.open_int_mod(parameter_name, 1, 1, 1000)
+        elif parameter_name == "esc_b_id":
+            self.open_int_mod(parameter_name, 1, -1, 254)
+        elif parameter_name == "chart_points":
+            self.open_int_mod(parameter_name, 1, 10, 1000)
+        elif parameter_name == "switch_a_b_esc":
+            self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":
-            self.open_int_mod(parameter_name, 5)
-        elif parameter_name == "battery_capacity_wh" or parameter_name == "serial_speed":
-            self.open_int_mod(parameter_name, 100)
+            self.open_int_mod(parameter_name, 5, 0, 1000)
+        elif parameter_name == "serial_speed":
+            self.open_int_mod(parameter_name, 100, 600, 500000)
+        elif parameter_name == "enable_uart_debug":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "motor_magnets":
+            self.open_int_mod(parameter_name, 1, 1, 100)
+        elif parameter_name == "wheel_diameter":
+            self.open_int_mod(parameter_name, 1, 30, 1000)
         elif parameter_name == "scan vesc can bus":
             self.open_scan_can_bus()
 
