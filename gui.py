@@ -73,7 +73,7 @@ class GUIApp:
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         self.settings = GUISettings()
-        self.service_status = GUIServiceState(self.ui)
+        self.service_status = GUIServiceState(self)
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
@@ -157,7 +157,7 @@ class GUIApp:
         if   state.uart_status == GUIState.UART_STATUS_ERROR:
             self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);") # red
         elif state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 130, 0);") # green
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 110, 0);") # green
         elif state.uart_status == GUIState.UART_STATUS_WORKING_ERROR:
             self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);")  # blue
         elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:

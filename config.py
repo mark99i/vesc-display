@@ -22,6 +22,10 @@ class Config:
     serial_port: str = "/dev/ttyUSB0"
     serial_speed: int = 115200
 
+    gpio_enabled: int = 0
+    gpio_break_signal_pin: int = 0
+    gpio_1wire_bus_pin: int = 0
+
     @staticmethod
     def load():
         if not os.path.isfile(utils.get_script_dir() + "/config.json"):

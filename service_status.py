@@ -12,6 +12,7 @@ from config import Config
 
 class GUIServiceState:
     ui: QDialog = None
+    parent = None
 
     le_systemd: QLineEdit = None
     le_con_state: QLineEdit = None
@@ -25,7 +26,7 @@ class GUIServiceState:
 
     def __init__(self, parent):
         self.ui = uic.loadUi(utils.get_script_dir(False) + "/vesc_uart_status.ui")
-        #self.ui.setParent(parent, Qt.FramelessWindowHint)
+        self.parent = parent
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
         self.ui.setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);")
 
@@ -103,5 +104,5 @@ class GUIServiceState:
         pass
 
     def click_close(self):
-        self.ui.destroy()
+        self.ui.close()
         pass

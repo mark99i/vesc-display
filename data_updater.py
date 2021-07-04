@@ -3,7 +3,7 @@ from threading import Thread
 
 import network
 from config import Config
-from gui_state import GUIState
+from gui_state import GUIState, ESCState
 
 
 class WorkerThread(Thread):
@@ -41,7 +41,10 @@ class WorkerThread(Thread):
 
                 if Config.esc_b_id >= 0:
                     result = network.Network.COMM_GET_VALUES_multi([-1, Config.esc_b_id])
-                    if result is None: continue
+                    if result is None:
+                        self.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
+                        self.callback(state)
+                        continue
 
                     if Config.switch_a_b_esc > 0:
                         state.esc_a_state.parse_from_json(result[str(Config.esc_b_id)], "A")
@@ -51,8 +54,14 @@ class WorkerThread(Thread):
                         state.esc_b_state.parse_from_json(result[str(Config.esc_b_id)], "B")
                 else:
                     result = network.Network.COMM_GET_VALUES_multi([-1])
-                    if result is None: continue
+                    if result is None:
+                        self.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
+                        self.callback(state)
+                        continue
                     state.esc_a_state.parse_from_json(result["-1"], "A")
+                    if state.esc_b_state.controller_a_b != "?":
+                        state.esc_b_state = ESCState("?")
+                self.state.uart_status = GUIState.UART_STATUS_WORKING_SUCCESS
 
                 if state.esc_b_state.controller_a_b != "?":
                     erpm = (state.esc_a_state.erpm + state.esc_b_state.erpm) / 2
