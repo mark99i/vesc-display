@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QLis
 import network
 import utils
 from config import Config
+from gui_state import GUIState
 
 
 class GUIServiceState:
@@ -68,6 +69,9 @@ class GUIServiceState:
         self.le_stats.setPlainText(json.dumps(js.get("stats")).replace("{", "").replace("}", ""))
         self.b_upd.setText("update\ninfo")
         self.b_upd.setEnabled(True)
+
+        if js.get("local_id", -1) != -1:
+            self.parent.data_updater_thread.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
 
     def click_update_status(self):
         self.le_systemd.setText("systemd state: ...")

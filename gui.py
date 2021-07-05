@@ -13,6 +13,7 @@ from PyQt5.QtChart import QChart, QLineSeries, QChartView, QCategoryAxis
 import time
 import data_updater
 import utils
+from config import Config
 from gui_settings import GUISettings
 from gui_state import GUIState, ESCState
 
@@ -135,6 +136,8 @@ class GUIApp:
         if self.service_status.ui.isVisible():
             return
 
+
+
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
         self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
 
@@ -155,17 +158,18 @@ class GUIApp:
         self.time.setText(time.strftime("%H:%M:%S", lt))
 
         if   state.uart_status == GUIState.UART_STATUS_ERROR:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);") # red
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);border: none;") # red
         elif state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 110, 0);") # green
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 110, 0);border: none;") # green
         elif state.uart_status == GUIState.UART_STATUS_WORKING_ERROR:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);")  # blue
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);border: none;")  # blue
         elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);") # pink
+            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);border: none;") # pink
 
         self.reqs += 1
         if self.last_time < int(time.time()):
-            utils.set_chart_series(self.chart, state.chart_current)
+            if Config.chart_current_points > 0 or Config.chart_current_points > 0:
+                utils.set_chart_series(self.chart, state.chart_current, state.chart_speed)
             # print(self.reqs)
             self.battery_percent.setText(str(self.reqs))
             self.reqs = 0

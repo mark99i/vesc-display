@@ -4,7 +4,7 @@ from threading import Thread
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
-from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog
+from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QScroller
 
 import network
 import utils
@@ -52,28 +52,28 @@ class GUISettingsIntMod(QDialog):
         self.val.setText(str(self.parameter_val))
 
         self.minus = QPushButton(self)
-        self.minus.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100);")
+        self.minus.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100); border: none;")
         self.minus.setGeometry(10, 70, 75, 61)
         self.minus.setFont(QFont("Consolas", 22))
         self.minus.setText("-")
         self.minus.clicked.connect(self.click_minus)
 
         self.plus = QPushButton(self)
-        self.plus.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100);")
+        self.plus.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100); border: none;")
         self.plus.setGeometry(310, 70, 75, 61)
         self.plus.setFont(QFont("Consolas", 22))
         self.plus.setText("+")
         self.plus.clicked.connect(self.click_plus)
 
         self.ok = QPushButton(self)
-        self.ok.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 150, 0);")
+        self.ok.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 150, 0); border: none;")
         self.ok.setGeometry(240, 150, 131, 41)
         self.ok.setFont(QFont("Consolas", 18))
         self.ok.setText("OK")
         self.ok.clicked.connect(self.click_ok)
 
         self.cancel = QPushButton(self)
-        self.cancel.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(150, 0, 0);")
+        self.cancel.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(150, 0, 0); border: none;")
         self.cancel.setGeometry(30, 150, 131, 41)
         self.cancel.setFont(QFont("Consolas", 18))
         self.cancel.setText("Cancel")
@@ -136,7 +136,7 @@ class GUISettingsScanCan(QDialog):
         self.textv.setAlignment(Qt.AlignCenter)
 
         self.close = QPushButton(self)
-        self.close.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100);")
+        self.close.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(0, 0, 100); border: none;" )
         self.close.setGeometry(130, 150, 131, 41)
         self.close.setFont(QFont("Consolas", 18))
         self.close.setText("Close")
@@ -162,6 +162,8 @@ class GUISettings:
     list_view: QListView = None
     list_model: QStandardItemModel = None
 
+    scroller: QScroller = None
+
     opened_change_val = False
 
     def __init__(self):
@@ -176,6 +178,8 @@ class GUISettings:
         self.list_view.setModel(self.list_model)
 
         self.list_view.clicked[QModelIndex].connect(self.clicked_item)
+
+        #self.list_view.verticalScrollBar().setFixedWidth(30)
         pass
 
     def get_list_item(self, text: str, s: bool = True):
@@ -187,8 +191,8 @@ class GUISettings:
     def reload_list(self):
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
-        self.list_model.appendRow(self.get_list_item("scan vesc can bus"))
-        self.list_model.appendRow(self.get_list_item("-----------------", False))
+        #self.list_model.appendRow(self.get_list_item("scan vesc can bus"))
+        #self.list_model.appendRow(self.get_list_item("-----------------", False))
         conf = Config.get_as_dict()
         for name in conf.keys():
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
@@ -216,8 +220,10 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 1, 1000)
         elif parameter_name == "esc_b_id":
             self.open_int_mod(parameter_name, 1, -1, 254)
-        elif parameter_name == "chart_points":
-            self.open_int_mod(parameter_name, 1, 10, 1000)
+        elif parameter_name == "chart_speed_points":
+            self.open_int_mod(parameter_name, 5, 0, 1000)
+        elif parameter_name == "chart_current_points":
+            self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":

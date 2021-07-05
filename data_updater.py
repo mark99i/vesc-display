@@ -26,8 +26,9 @@ class WorkerThread(Thread):
     def run(self):
         state = self.state
         state.chart_current = []
-        for i in range(0, Config.chart_points):
+        for i in range(0, Config.chart_current_points):
             state.chart_current.append(0)
+        for i in range(0, Config.chart_speed_points):
             state.chart_speed.append(0)
 
         time.sleep(0.5)
@@ -74,9 +75,15 @@ class WorkerThread(Thread):
 
                 state.full_power = state.esc_a_state.power + state.esc_b_state.power
 
-                while len(state.chart_current) > Config.chart_points:
+                while len(state.chart_current) > Config.chart_current_points:
                     state.chart_current.pop(0)
-                state.chart_current.append(state.full_power)
+                if Config.chart_current_points > 0:
+                    state.chart_current.append(state.full_power)
+
+                while len(state.chart_speed) > Config.chart_speed_points:
+                    state.chart_speed.pop(0)
+                if Config.chart_speed_points > 0:
+                    state.chart_speed.append(state.speed)
 
             else:
                 time.sleep(0.1)

@@ -2,6 +2,7 @@ import inspect
 import os
 import sys
 import subprocess
+import time
 from threading import Thread
 
 from PyQt5.QtChart import QChart, QLineSeries
@@ -20,6 +21,7 @@ def get_script_dir(follow_symlinks=True):
 
 
 chart_current_pen = None
+chart_speed_pen = None
 
 def setup_empty_chart(chart:QChart):
     series = QLineSeries()
@@ -31,23 +33,36 @@ def setup_empty_chart(chart:QChart):
     chart_current_pen.setWidth(4)
     series.setPen(chart_current_pen)
 
+    global chart_speed_pen
+    chart_speed_pen = QPen()
+    chart_speed_pen.setColor(QColor(0, 200, 0, 255))
+    chart_speed_pen.setWidth(4)
+    series.setPen(chart_speed_pen)
+
     chart.removeAllSeries()
     chart.addSeries(series)
     # chart.createDefaultAxes()
     chart.legend().hide()
     chart.setBackgroundVisible(False)
 
-def set_chart_series(chart: QChart, arr: list):
-    series = QLineSeries()
-
-    for i in range(1, len(arr)):
-        series.append(i, arr[i-1])
-
-    global chart_current_pen
-    series.setPen(chart_current_pen)
+def set_chart_series(chart: QChart, arr_current: list, arr_speed: list):
     chart.removeAllSeries()
-    chart.addSeries(series)
 
+    global chart_current_pen, chart_speed_pen
+
+    if  len(arr_current) > 0:
+        series_current = QLineSeries()
+        for i in range(1, len(arr_current)):
+            series_current.append(i, arr_current[i - 1])
+        series_current.setPen(chart_current_pen)
+        chart.addSeries(series_current)
+
+    if len(arr_speed) > 0:
+        series_speed = QLineSeries()
+        for i in range(1, len(arr_speed)):
+            series_speed.append(i, arr_speed[i-1])
+        series_speed.setPen(chart_speed_pen)
+        chart.addSeries(series_speed)
 
 class QTCommunication:
     # noinspection PyUnresolvedReferences
@@ -98,12 +113,15 @@ def get_systemd_status(service: str) -> str:
 
     cmd = f"systemctl status {service} | grep active | xargs | cut -d' ' -f 2-3"
     result = subprocess.check_output(["bash", "-c", cmd])
-    return result[:-1]
+    return result[:-1].decode()
 
 def restart_systemd_status(service: str) -> None:
     if sys.platform == "win32":
         return None
 
-    cmd = f"systemctl restart {service}"
+    cmd = f"sudo systemctl restart {service}"
     subprocess.check_output(["bash", "-c", cmd])
+
+    # time for starting service
+    time.sleep(5)
     return None

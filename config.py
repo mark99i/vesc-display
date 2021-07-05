@@ -6,7 +6,8 @@ import utils
 
 class Config:
     delay_update_ms: int = 30
-    chart_points: int = 70
+    chart_current_points: int = 70
+    chart_speed_points: int = 70
 
     hw_controller_current_limit: int = 135
 

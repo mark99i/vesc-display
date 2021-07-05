@@ -159,7 +159,8 @@ border-bottom: none;</string>
      <enum>Qt::ClickFocus</enum>
     </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(255, 85, 0);</string>
+     <string notr="true">color: rgb(255, 85, 0);
+border: none;</string>
     </property>
     <property name="text">
      <string/>
@@ -354,8 +355,12 @@ border-bottom: none;</string>
     <property name="focusPolicy">
      <enum>Qt::ClickFocus</enum>
     </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);</string>
+     <string notr="true">color: rgb(255, 255, 255);
+border-color: rgb(255, 255, 255);</string>
     </property>
     <property name="text">
      <string/>
@@ -554,7 +559,8 @@ T:  99.9°С</string>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);
-background-color: rgb(255, 0, 255);</string>
+background-color: rgb(255, 0, 255);
+border: none;</string>
     </property>
     <property name="text">
      <string>UART</string>
@@ -578,6 +584,7 @@ background-color: rgb(255, 0, 255);</string>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);
 background-color: rgb(0, 100, 0);
+border: none;
 </string>
     </property>
     <property name="text">

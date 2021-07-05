@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>550</width>
-    <height>425</height>
+    <width>640</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,14 +18,14 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>550</width>
-    <height>425</height>
+    <width>640</width>
+    <height>480</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>550</width>
-    <height>425</height>
+    <width>640</width>
+    <height>480</height>
    </size>
   </property>
   <property name="contextMenuPolicy">
@@ -40,9 +40,9 @@
   <widget class="QLineEdit" name="title">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>10</y>
-     <width>531</width>
+     <width>601</width>
      <height>41</height>
     </rect>
    </property>
@@ -74,9 +74,9 @@
   <widget class="QLineEdit" name="systemd_state">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>80</y>
-     <width>491</width>
+     <x>40</x>
+     <y>70</y>
+     <width>561</width>
      <height>31</height>
     </rect>
    </property>
@@ -120,9 +120,9 @@
   <widget class="QLineEdit" name="connection_state">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>130</y>
-     <width>491</width>
+     <x>40</x>
+     <y>120</y>
+     <width>561</width>
      <height>31</height>
     </rect>
    </property>
@@ -157,9 +157,9 @@
   <widget class="QPushButton" name="control_systemd_service">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>350</y>
-     <width>111</width>
+     <x>40</x>
+     <y>310</y>
+     <width>231</width>
      <height>71</height>
     </rect>
    </property>
@@ -170,7 +170,8 @@
    </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);
-background-color: rgb(10, 109, 171);</string>
+background-color: rgb(10, 109, 171);
+border: none;</string>
    </property>
    <property name="text">
     <string>restart
@@ -180,9 +181,9 @@ service</string>
   <widget class="QLineEdit" name="local_esc_id">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>180</y>
-     <width>491</width>
+     <x>40</x>
+     <y>170</y>
+     <width>561</width>
      <height>31</height>
     </rect>
    </property>
@@ -217,9 +218,9 @@ service</string>
   <widget class="QPushButton" name="connect_reconnect">
    <property name="geometry">
     <rect>
-     <x>280</x>
-     <y>350</y>
-     <width>121</width>
+     <x>40</x>
+     <y>390</y>
+     <width>231</width>
      <height>71</height>
     </rect>
    </property>
@@ -231,6 +232,7 @@ service</string>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);
 background-color: rgb(79, 79, 39);
+border: none;
 </string>
    </property>
    <property name="text">
@@ -241,9 +243,9 @@ serial</string>
   <widget class="QPushButton" name="update_info">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>350</y>
-     <width>111</width>
+     <x>370</x>
+     <y>310</y>
+     <width>231</width>
      <height>71</height>
     </rect>
    </property>
@@ -264,9 +266,13 @@ serial</string>
      <pointsize>20</pointsize>
     </font>
    </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);
-background-color: rgb(0, 112, 0);</string>
+background-color: rgb(0, 112, 0);
+border: none;</string>
    </property>
    <property name="text">
     <string>update
@@ -276,9 +282,9 @@ info</string>
   <widget class="QPushButton" name="close_button">
    <property name="geometry">
     <rect>
-     <x>420</x>
-     <y>350</y>
-     <width>111</width>
+     <x>370</x>
+     <y>390</y>
+     <width>231</width>
      <height>71</height>
     </rect>
    </property>
@@ -289,7 +295,8 @@ info</string>
    </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);
-background-color: rgb(157, 52, 0);</string>
+background-color: rgb(157, 52, 0);
+border: none;</string>
    </property>
    <property name="text">
     <string>close</string>
@@ -298,9 +305,9 @@ background-color: rgb(157, 52, 0);</string>
   <widget class="QPlainTextEdit" name="connection_stats">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>230</y>
-     <width>491</width>
+     <x>40</x>
+     <y>220</y>
+     <width>561</width>
      <height>71</height>
     </rect>
    </property>
@@ -315,6 +322,12 @@ background-color: rgb(157, 52, 0);</string>
    </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);</string>
+   </property>
+   <property name="verticalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOff</enum>
+   </property>
+   <property name="horizontalScrollBarPolicy">
+    <enum>Qt::ScrollBarAlwaysOff</enum>
    </property>
    <property name="undoRedoEnabled">
     <bool>false</bool>
