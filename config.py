@@ -18,6 +18,8 @@ class Config:
 
     motor_magnets: int = 30
     wheel_diameter: int = 250
+    battery_cells: int = 14
+    battery_mah: int = 18200
 
     serial_vesc_api: str = "http://127.0.0.1:2002"
     serial_port: str = "/dev/ttyUSB0"

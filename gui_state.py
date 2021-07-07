@@ -10,6 +10,8 @@ class ESCState:
     phase_current: int = 0
     power: int = 0
 
+    watt_hours_used: int = 0
+
     battery_current: int = 0
     voltage: float = 0.0
 
@@ -39,6 +41,8 @@ class ESCState:
         self.temperature = json["temp_fet_filtered"]
         self.erpm = json["rpm"]
 
+        self.watt_hours_used = int(json["watt_hours"] - json["watt_hours_charged"])
+
         if self.phase_current != 0:
             self.load_percent = int( 100 / (float(Config.hw_controller_current_limit) / float(self.phase_current)) )
             if self.load_percent < 0: self.load_percent *= -1
@@ -65,7 +69,7 @@ class GUIState:
 
     full_power: int = 0
 
-    battery_watt_estimates: int = 0
+    battery_percent_str: str = None
 
     last_update_time_ms: int = 0
     refresh_interval_ms: int = 30

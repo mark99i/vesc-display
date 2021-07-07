@@ -2,6 +2,7 @@ import time
 from threading import Thread
 
 import network
+import utils
 from config import Config
 from gui_state import GUIState, ESCState
 
@@ -39,7 +40,6 @@ class WorkerThread(Thread):
 
             if self.state.uart_status == GUIState.UART_STATUS_WORKING_ERROR or \
                     self.state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
-
                 if Config.esc_b_id >= 0:
                     result = network.Network.COMM_GET_VALUES_multi([-1, Config.esc_b_id])
                     if result is None:
@@ -66,8 +66,15 @@ class WorkerThread(Thread):
 
                 if state.esc_b_state.controller_a_b != "?":
                     erpm = (state.esc_a_state.erpm + state.esc_b_state.erpm) / 2
+                    voltage = (state.esc_a_state.voltage + state.esc_b_state.voltage) / 2
+                    watt_hours = state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used
                 else:
                     erpm = state.esc_a_state.erpm
+                    voltage = state.esc_a_state.voltage
+                    watt_hours = state.esc_a_state.watt_hours_used
+
+                if utils.Battery.display_start_voltage == 0:
+                    utils.Battery.init(voltage)
 
                 rpm = erpm / (Config.motor_magnets / 2)
                 speed = (Config.wheel_diameter / 10) * rpm * 0.001885
@@ -84,6 +91,8 @@ class WorkerThread(Thread):
                     state.chart_speed.pop(0)
                 if Config.chart_speed_points > 0:
                     state.chart_speed.append(state.speed)
+
+                state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours)
 
             else:
                 time.sleep(0.1)

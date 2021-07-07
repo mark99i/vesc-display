@@ -1,22 +1,17 @@
-import os
-import queue
-import sys
-from threading import Lock
-
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QWidget, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
-    QTextEdit
-from PyQt5.QtCore import Qt, QPointF, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, qRgb, QIcon, QPixmap, QTextOption
-from PyQt5.QtChart import QChart, QLineSeries, QChartView, QCategoryAxis
-
 import time
+
+from PyQt5 import uic
+from PyQt5.QtChart import QChart, QChartView
+from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
+from PyQt5.QtGui import QPainter, QIcon, QPixmap
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
+    QTextEdit
+
 import data_updater
 import utils
 from config import Config
 from gui_settings import GUISettings
-from gui_state import GUIState, ESCState
-
+from gui_state import GUIState
 # noinspection PyUnresolvedReferences
 from service_status import GUIServiceState
 
@@ -136,8 +131,6 @@ class GUIApp:
         if self.service_status.ui.isVisible():
             return
 
-
-
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
         self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
 
@@ -152,6 +145,8 @@ class GUIApp:
         else:
             self.watt_kmh.setText("0W")
         self.main_speed_lcd.display(str(round(state.speed, 1)))
+
+        self.battery_percent.setText(state.battery_percent_str)
 
         lt = time.localtime()
         self.date.setText(time.strftime("%d.%m.%y", lt))
@@ -170,8 +165,8 @@ class GUIApp:
         if self.last_time < int(time.time()):
             if Config.chart_current_points > 0 or Config.chart_current_points > 0:
                 utils.set_chart_series(self.chart, state.chart_current, state.chart_speed)
-            # print(self.reqs)
-            self.battery_percent.setText(str(self.reqs))
+            print(self.reqs)
+            #self.battery_percent.setText(str(self.reqs))
             self.reqs = 0
             self.last_time = int(time.time())
         pass

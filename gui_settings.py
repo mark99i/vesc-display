@@ -119,9 +119,11 @@ class GUISettingsIntMod(QDialog):
         self.destroy()
         pass
 
-class GUISettingsScanCan(QDialog):
+class GUISettingsGetSettings(QDialog):
+    parent = None
+
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent.ui)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);")
 
@@ -132,7 +134,7 @@ class GUISettingsScanCan(QDialog):
         self.textv.setUndoRedoEnabled(False)
         self.textv.setDisabled(False)
         self.textv.setFont(QFont("Consolas", 24))
-        self.textv.setText("scanning can bus... please wait")
+        self.textv.setText("getting parameters...\nplease wait")
         self.textv.setAlignment(Qt.AlignCenter)
 
         self.close = QPushButton(self)
@@ -144,16 +146,22 @@ class GUISettingsScanCan(QDialog):
         self.close.setDisabled(True)
 
     def show(self):
-        utils.QTCommunication.run_func_in_background(self, network.Network.scan_can, self.on_scan_ended)
+        utils.QTCommunication.run_func_in_background(self, network.Network.COMM_GET_MCCONF, self.on_scan_ended)
         super().show()
 
-    def on_scan_ended(self, vescs: list):
+    def on_scan_ended(self, data: dict):
         self.close.setDisabled(False)
-        self.textv.setText("Scan complete! Result: " + str(vescs))
+        mcconf = data["mcconf"]
+        Config.battery_mah = int(mcconf["si_battery_ah"] * 100)
+        Config.battery_cells = mcconf["si_battery_cells"]
+        Config.motor_magnets = mcconf["si_motor_poles"]
+        Config.wheel_diameter = int(mcconf["si_wheel_diameter"] * 1000)
+        self.textv.setText("command complete!")
         pass
 
     def click_cancel(self):
         self.hide()
+        self.parent.reload_list()
         pass
 
 class GUISettings:
@@ -178,8 +186,6 @@ class GUISettings:
         self.list_view.setModel(self.list_model)
 
         self.list_view.clicked[QModelIndex].connect(self.clicked_item)
-
-        #self.list_view.verticalScrollBar().setFixedWidth(30)
         pass
 
     def get_list_item(self, text: str, s: bool = True):
@@ -191,8 +197,8 @@ class GUISettings:
     def reload_list(self):
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
-        #self.list_model.appendRow(self.get_list_item("scan vesc can bus"))
-        #self.list_model.appendRow(self.get_list_item("-----------------", False))
+        self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
+        self.list_model.appendRow(self.get_list_item("-----------------", False))
         conf = Config.get_as_dict()
         for name in conf.keys():
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
@@ -202,9 +208,10 @@ class GUISettings:
         change_ui = GUISettingsIntMod(self.ui, parameter, step, self.reload_list, val_min, val_max)
         change_ui.show()
 
-    def open_scan_can_bus(self):
-        scan_can = GUISettingsScanCan(self.ui)
-        scan_can.show()
+    def open_get_battery_motor_from_vesc(self):
+        open_get_battery_motor_from_vesc = GUISettingsGetSettings(self.ui)
+        open_get_battery_motor_from_vesc.parent = self
+        open_get_battery_motor_from_vesc.show()
         pass
 
     def clicked_item(self, s):
@@ -236,7 +243,7 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 1, 100)
         elif parameter_name == "wheel_diameter":
             self.open_int_mod(parameter_name, 1, 30, 1000)
-        elif parameter_name == "scan vesc can bus":
+        elif parameter_name == "get battery and motor from vesc":
             self.open_scan_can_bus()
 
     def show(self):

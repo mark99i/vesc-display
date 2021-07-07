@@ -1,4 +1,5 @@
 import inspect
+import math
 import os
 import sys
 import subprocess
@@ -8,6 +9,8 @@ from threading import Thread
 from PyQt5.QtChart import QChart, QLineSeries
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QPen, QColor
+
+
 
 
 def get_script_dir(follow_symlinks=True):
@@ -63,6 +66,60 @@ def set_chart_series(chart: QChart, arr_current: list, arr_speed: list):
             series_speed.append(i, arr_speed[i-1])
         series_speed.setPen(chart_speed_pen)
         chart.addSeries(series_speed)
+
+class Battery:
+
+    MIN_CELL_VOLTAGE: float = 2.9
+    NOM_CELL_VOLTAGE: float = 3.7
+    MAX_CELL_VOLTAGE: float = 4.2
+
+    full_battery_wh: int = 0
+    display_start_voltage: float = 0
+    non_full_start_voltage: bool = False
+
+    last_percent: int = -100
+
+    @staticmethod
+    def init(now_voltage):
+        from config import Config
+        if Config.battery_cells < 1 or Config.battery_mah < 500:
+            return
+        Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
+
+        max_battery_voltage = Config.battery_cells * Battery.MAX_CELL_VOLTAGE
+        min_voltage_for_full_charge = max_battery_voltage - (max_battery_voltage / 100 / 2) # mex_voltage - 0.5%
+
+        Battery.display_start_voltage = now_voltage
+        if now_voltage < min_voltage_for_full_charge:
+            Battery.non_full_start_voltage = True
+
+    @staticmethod
+    def recalc_full_battery_wh():
+        from config import Config
+        Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
+
+    @staticmethod
+    def calculate_battery_percent(voltage: float, watt_hours: int) -> str:
+        if Battery.full_battery_wh == 0:
+            return "-"
+
+        estimated_wh = Battery.full_battery_wh - watt_hours
+        battery_percent = int(100 / (Battery.full_battery_wh / estimated_wh))
+
+        if Battery.last_percent == -100:
+            Battery.last_percent = battery_percent
+        else:
+            if abs(Battery.last_percent - battery_percent) > 3:
+                if Battery.last_percent < battery_percent:
+                    battery_percent = Battery.last_percent + 1
+                else:
+                    battery_percent = Battery.last_percent - 1
+            Battery.last_percent = battery_percent
+
+        battery_percent = max(min(100, battery_percent), 0)
+        return f"{battery_percent}%{'?' if Battery.non_full_start_voltage else ''}"
+
+
 
 class QTCommunication:
     # noinspection PyUnresolvedReferences

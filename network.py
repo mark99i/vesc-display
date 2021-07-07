@@ -76,17 +76,36 @@ class Network:
         except:
             return None
 
-'''
-            @staticmethod
-            def COMM_FW_VERSION(controller_id: int = -1) -> dict:
-                try:
-                    if controller_id < 0:
-                        controller_id = "local"
-                    content = Network.session.get(f"{Config.serial_vesc_api}/vesc/{controller_id}/command/COMM_FW_VERSION", timeout=Network.net_timeout).content
-                    answ = json.loads(content)
 
-                    if answ["success"]:
-                        return answ["data"]
-                else:
-                    return None
-'''
+    @staticmethod
+    def COMM_FW_VERSION(controller_id: int = -1) -> dict:
+        try:
+            data = json.dumps({"vesc_ids": [controller_id]})
+            content = Network.session.get(f"{Config.serial_vesc_api}/vescs/command/COMM_FW_VERSION",
+                                          timeout=Network.net_timeout,
+                                          headers={'Content-Type': 'application/json'}, body=data).content
+            answ = json.loads(content)
+
+            if answ["success"]:
+                return answ["data"][controller_id]
+            else:
+                return None
+        except:
+            return None
+
+    @staticmethod
+    def COMM_GET_MCCONF(controller_id: int = -1) -> dict:
+        try:
+            data = json.dumps({"vesc_ids": [controller_id]})
+            content = Network.session.get(f"{Config.serial_vesc_api}/vescs/command/COMM_GET_MCCONF",
+                                          timeout=Network.net_timeout + 500,
+                                          headers={'Content-Type': 'application/json'}, body=data).content
+            answ = json.loads(content)
+
+            if answ["success"]:
+                return answ["data"][controller_id]
+            else:
+                return None
+        except:
+            return None
+
