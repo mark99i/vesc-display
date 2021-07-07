@@ -156,6 +156,7 @@ class GUISettingsGetSettings(QDialog):
         Config.battery_cells = mcconf["si_battery_cells"]
         Config.motor_magnets = mcconf["si_motor_poles"]
         Config.wheel_diameter = int(mcconf["si_wheel_diameter"] * 1000)
+        Config.save()
         self.textv.setText("command complete!")
         pass
 
