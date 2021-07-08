@@ -3,7 +3,7 @@ from threading import Thread
 
 import network
 import utils
-from config import Config
+from config import Config, Odometer
 from gui_state import GUIState, ESCState
 
 
@@ -18,7 +18,23 @@ class WorkerThread(Thread):
         self.callback = callback
 
     def setup(self):
-        res = network.Network.connect()
+        Odometer.load()
+        if Config.odometer_distance_km_backup > Odometer.full_odometer:
+            # restore from config
+            Odometer.full_odometer = Config.odometer_distance_km_backup
+            Odometer.save()
+        else:
+            Config.odometer_distance_km_backup = Odometer.full_odometer
+            Config.save()
+
+        status = network.Network.get_uart_status()
+        if status is None: self.state.uart_status = GUIState.UART_STATUS_ERROR; return
+
+        if status["status"] != "connected":
+            res = network.Network.connect()
+        else:
+            res = True
+
         if res:
             self.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
         else:
@@ -76,7 +92,10 @@ class WorkerThread(Thread):
                 if utils.Battery.display_start_voltage == 0:
                     utils.Battery.init(voltage)
 
-                rpm = erpm / (Config.motor_magnets / 2)
+                if Config.motor_magnets < 1:
+                    rpm = 0
+                else:
+                    rpm = erpm / (Config.motor_magnets / 2)
                 speed = (Config.wheel_diameter / 10) * rpm * 0.001885
                 state.speed = round(speed, 1)
 
@@ -93,6 +112,14 @@ class WorkerThread(Thread):
                     state.chart_speed.append(state.speed)
 
                 state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours)
+
+                now_distance = utils.distance_km_from_tachometer(state.esc_a_state.tachometer)
+                if now_distance < Odometer.session_mileage:
+                    Odometer.full_odometer += Odometer.session_mileage
+                    Odometer.save()
+                    print("save old session")
+
+                Odometer.session_mileage = now_distance
 
             else:
                 time.sleep(0.1)

@@ -20,6 +20,7 @@ class ESCState:
     load_percent: int = 0
 
     erpm: float = 0
+    tachometer: int = 0
 
     def parse_from_json(self, json: dict, controller_a_b: str = "?"):
         self.controller_a_b = controller_a_b
@@ -31,7 +32,7 @@ class ESCState:
         self.battery_current = json["avg_input_current"]
         self.voltage = json["voltage"]
 
-        if self.battery_current > 42949:
+        if self.battery_current > 42949:        # TODO: need refactor !!
             self.battery_current -= 42949673
 
         self.power = int(self.battery_current * self.voltage)
@@ -40,6 +41,9 @@ class ESCState:
 
         self.temperature = json["temp_fet_filtered"]
         self.erpm = json["rpm"]
+        if self.erpm > 42949:       # TODO: test it
+            self.erpm -= 42949673
+        self.tachometer = json["tachometer"]
 
         self.watt_hours_used = int(json["watt_hours"] - json["watt_hours_charged"])
 

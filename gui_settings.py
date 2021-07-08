@@ -122,8 +122,8 @@ class GUISettingsIntMod(QDialog):
 class GUISettingsGetSettings(QDialog):
     parent = None
 
-    def __init__(self, parent):
-        super().__init__(parent.ui)
+    def __init__(self, parent_ui):
+        super().__init__(parent_ui)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);")
 
@@ -134,7 +134,7 @@ class GUISettingsGetSettings(QDialog):
         self.textv.setUndoRedoEnabled(False)
         self.textv.setDisabled(False)
         self.textv.setFont(QFont("Consolas", 24))
-        self.textv.setText("getting parameters...\nplease wait")
+        self.textv.setText("getting parameters... please wait")
         self.textv.setAlignment(Qt.AlignCenter)
 
         self.close = QPushButton(self)
@@ -151,14 +151,17 @@ class GUISettingsGetSettings(QDialog):
 
     def on_scan_ended(self, data: dict):
         self.close.setDisabled(False)
+        if data is None:
+            self.textv.setText("command error or unsupported!")
+            return
+
         mcconf = data["mcconf"]
-        Config.battery_mah = int(mcconf["si_battery_ah"] * 100)
+        Config.battery_mah = int(mcconf["si_battery_ah"] * 1000)
         Config.battery_cells = mcconf["si_battery_cells"]
         Config.motor_magnets = mcconf["si_motor_poles"]
         Config.wheel_diameter = int(mcconf["si_wheel_diameter"] * 1000)
         Config.save()
         self.textv.setText("command complete!")
-        pass
 
     def click_cancel(self):
         self.hide()
@@ -189,19 +192,25 @@ class GUISettings:
         self.list_view.clicked[QModelIndex].connect(self.clicked_item)
         pass
 
-    def get_list_item(self, text: str, s: bool = True):
+    def get_list_item(self, text: str, separator: bool = False, disabled: bool = False):
         item = QStandardItem(text)
         item.setEditable(False)
-        if s: item.setCheckState(False)
+        #if separator: item.setCheckState(False)
+        if disabled: item.setEnabled(False)
         return item
 
     def reload_list(self):
+        invisible_options = ['serial_vesc_api', 'gpio_enabled', 'gpio_break_signal_pin', 'gpio_1wire_bus_pin', 'odometer_distance_km_backup']
+
+        # TODO: modify odometer
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
-        self.list_model.appendRow(self.get_list_item("-----------------", False))
+        self.list_model.appendRow(self.get_list_item(f"modify odometer [{Config.odometer_distance_km_backup}]", disabled=True))
+        self.list_model.appendRow(self.get_list_item("-----------------", separator=True))
         conf = Config.get_as_dict()
         for name in conf.keys():
+            if name in invisible_options: continue
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
 
     def open_int_mod(self, parameter, step, val_min, val_max):
@@ -238,14 +247,20 @@ class GUISettings:
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "serial_speed":
             self.open_int_mod(parameter_name, 100, 600, 500000)
-        elif parameter_name == "enable_uart_debug":
+        elif parameter_name == "service_enable_debug":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "service_rcv_timeout_ms":
+            self.open_int_mod(parameter_name, 10, 1, 10000)
         elif parameter_name == "motor_magnets":
-            self.open_int_mod(parameter_name, 1, 1, 100)
+            self.open_int_mod(parameter_name, 1, 0, 100)
         elif parameter_name == "wheel_diameter":
-            self.open_int_mod(parameter_name, 1, 30, 1000)
+            self.open_int_mod(parameter_name, 5, 5, 1000)
+        elif parameter_name == "battery_mah":
+            self.open_int_mod(parameter_name, 100, 4000, 100000)
+        elif parameter_name == "battery_cells":
+            self.open_int_mod(parameter_name, 1, 0, 25)
         elif parameter_name == "get battery and motor from vesc":
-            self.open_scan_can_bus()
+            self.open_get_battery_motor_from_vesc()
 
     def show(self):
         self.reload_list()

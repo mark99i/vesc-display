@@ -3,11 +3,13 @@ import ujson as json
 import requests
 import urllib3
 
-# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "/dev/ttyUSB0", "speed": 115200, "debug_enabled": 1}'
+# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "/dev/ttyUSB0", "speed": 115200, "debug_enabled": 0}'
+# curl 'http://127.0.0.1:2002/uart/status'
 # curl 'http://127.0.0.1:2002/vesc/local/id'
 # curl 'http://127.0.0.1:2002/vesc/local/can/scan'
-# curl 'http://127.0.0.1:2002/vesc/local/command/COMM_FW_VERSION'
-# curl 'http://127.0.0.1:2002/vesc/local/command/COMM_GET_VALUES'
+# curl 'http://127.0.0.1:2002/vescs/command/COMM_FW_VERSION?vesc_id=-1'
+# curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_VALUES'
+# curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_MCCONF'
 # curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/vescs/command/COMM_GET_VALUES' --data '{"vesc_ids": [-1, 15]}'
 from config import Config
 
@@ -35,7 +37,7 @@ class Network:
     def connect() -> bool:
         try:
 
-            js = {"path": Config.serial_port, "speed": Config.serial_speed, "debug_enabled": bool(Config.enable_uart_debug)}
+            js = {"path": Config.serial_port, "speed": Config.serial_speed, "debug_enabled": bool(Config.service_enable_debug)}
             content = Network.session.post(f"{Config.serial_vesc_api}/uart/connect",
                                             headers={'Content-Type': 'application/json'}, json=js,
                                             timeout=Network.net_timeout).content
@@ -96,14 +98,13 @@ class Network:
     @staticmethod
     def COMM_GET_MCCONF(controller_id: int = -1) -> dict:
         try:
-            data = json.dumps({"vesc_ids": [controller_id]})
-            content = Network.session.get(f"{Config.serial_vesc_api}/vescs/command/COMM_GET_MCCONF",
-                                          timeout=Network.net_timeout + 500,
-                                          headers={'Content-Type': 'application/json'}, body=data).content
+            if controller_id is None: controller_id = -1
+            content = Network.session.get(f"{Config.serial_vesc_api}/vescs/command/COMM_GET_MCCONF?vesc_id={controller_id}",
+                                          timeout=Network.net_timeout + 500).content
             answ = json.loads(content)
 
             if answ["success"]:
-                return answ["data"][controller_id]
+                return answ["data"][str(controller_id)]
             else:
                 return None
         except:

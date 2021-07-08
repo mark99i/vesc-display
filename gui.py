@@ -3,13 +3,13 @@ import time
 from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QIcon, QPixmap
+from PyQt5.QtGui import QPainter, QIcon, QPixmap, QCursor
 from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
     QTextEdit
 
 import data_updater
 import utils
-from config import Config
+from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
 # noinspection PyUnresolvedReferences
@@ -44,9 +44,9 @@ class GUIApp:
     chart: QChart = None
     chartView: QChartView = None
 
-    battery_percent: QLineEdit = None
+    left_param: QLineEdit = None
     main_power: QLineEdit = None
-    watt_kmh: QLineEdit = None
+    right_param: QLineEdit = None
 
     esc_a_element: QTextEdit = None
     esc_b_element: QPlainTextEdit = None
@@ -59,6 +59,8 @@ class GUIApp:
     uart_button: QPushButton = None
 
     data_updater_thread: data_updater.WorkerThread = None
+
+    alt = False
 
     last_time = 0
     reqs = 0
@@ -91,17 +93,20 @@ class GUIApp:
         self.esc_a_element = self.ui.esc_a_desc
         self.esc_b_element = self.ui.esc_b_desc
         self.main_speed_lcd = self.ui.main_speed
-        self.watt_kmh = self.ui.watt_kmh
+        self.left_param = self.ui.left_param
         self.main_power = self.ui.main_power
-        self.battery_percent = self.ui.battery_percent
+        self.right_param = self.ui.right_param
         self.date = self.ui.date
         self.time = self.ui.time
 
-        self.watt_kmh.setAlignment(Qt.AlignCenter)
+        self.left_param.setAlignment(Qt.AlignCenter)
         self.main_power.setAlignment(Qt.AlignCenter)
-        self.battery_percent.setAlignment(Qt.AlignCenter)
+        self.right_param.setAlignment(Qt.AlignCenter)
         self.date.setAlignment(Qt.AlignCenter)
         self.time.setAlignment(Qt.AlignCenter)
+
+        self.right_param.mousePressEvent = self.on_click_right_param
+        self.right_param.setReadOnly(True)
 
         self.esc_b_element.lower()
         self.esc_a_element.lower()
@@ -115,15 +120,21 @@ class GUIApp:
         self.app.exec()
 
     def on_click_close_app(self):
+        self.ui.hide()
         self.ui.destroy()
-        self.app.exit(0)
-        pass
+        raise Exception("exit")
+        # TODO: need exit func
 
     def on_click_open_settings(self):
         self.settings.show()
 
     def on_click_uart_settings(self):
         self.service_status.show()
+
+    def on_click_right_param(self, event):
+        self.alt = not self.alt
+        # TODO: alt func menu
+        pass
 
     def callback_update_gui(self, state: GUIState):
         if self.settings.ui.isVisible():
@@ -139,14 +150,18 @@ class GUIApp:
                     f'{state.esc_a_state.battery_current + state.esc_b_state.battery_current}A'
         self.main_power.setText(power_str)
 
-        if state.speed > 0:
-            wt_kmh = int((state.esc_a_state.power + state.esc_b_state.power) / state.speed)
-            self.watt_kmh.setText(f"{wt_kmh}W")
-        else:
-            self.watt_kmh.setText("0W")
+        #if state.speed > 0:
+        #    wt_kmh = int((state.esc_a_state.power + state.esc_b_state.power) / state.speed)
+        #    self.left_param.setText(f"{wt_kmh}W")
+        #else:
+        #    self.left_param.setText("0W")
+        #self.left_param.setText()
+
         self.main_speed_lcd.display(str(round(state.speed, 1)))
 
-        self.battery_percent.setText(state.battery_percent_str)
+        self.left_param.setText(state.battery_percent_str)
+        if not self.alt:
+            self.right_param.setText(str(Odometer.session_mileage)[:4])
 
         lt = time.localtime()
         self.date.setText(time.strftime("%d.%m.%y", lt))
@@ -166,7 +181,8 @@ class GUIApp:
             if Config.chart_current_points > 0 or Config.chart_current_points > 0:
                 utils.set_chart_series(self.chart, state.chart_current, state.chart_speed)
             print(self.reqs)
-            #self.battery_percent.setText(str(self.reqs))
+            if self.alt:
+                self.right_param.setText(str(self.reqs))
             self.reqs = 0
             self.last_time = int(time.time())
         pass

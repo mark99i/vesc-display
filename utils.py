@@ -75,7 +75,7 @@ class Battery:
 
     full_battery_wh: int = 0
     display_start_voltage: float = 0
-    non_full_start_voltage: bool = False
+    full_tracking_disabled: bool = False
 
     last_percent: int = -100
 
@@ -86,22 +86,37 @@ class Battery:
             return
         Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
 
-        max_battery_voltage = Config.battery_cells * Battery.MAX_CELL_VOLTAGE
-        min_voltage_for_full_charge = max_battery_voltage - (max_battery_voltage / 100 / 2) # mex_voltage - 0.5%
-
-        Battery.display_start_voltage = now_voltage
-        if now_voltage < min_voltage_for_full_charge:
-            Battery.non_full_start_voltage = True
+        if Battery.is_full_charged(now_voltage):
+            Battery.full_tracking_disabled = False
+        else:
+            Battery.full_tracking_disabled = True
 
     @staticmethod
-    def recalc_full_battery_wh():
+    def recalc_full_battery_wh() -> None:
         from config import Config
         Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
+
+    @staticmethod
+    def is_full_charged(now_voltage: int) -> bool:
+        from config import Config
+        max_battery_voltage = Config.battery_cells * Battery.MAX_CELL_VOLTAGE
+        min_voltage_for_full_charge = max_battery_voltage - (max_battery_voltage / 100 / 2) # max_voltage - 0.5%
+
+        return now_voltage >= min_voltage_for_full_charge
 
     @staticmethod
     def calculate_battery_percent(voltage: float, watt_hours: int) -> str:
         if Battery.full_battery_wh == 0:
             return "-"
+
+        if Battery.full_tracking_disabled:
+            from config import Config
+            percent_by_voltage = map_ard(voltage,
+                                         Battery.MIN_CELL_VOLTAGE * Config.battery_cells,
+                                         Battery.MAX_CELL_VOLTAGE * Config.battery_cells,
+                                         0, 100)
+
+            return f"{int(percent_by_voltage)}%"
 
         estimated_wh = Battery.full_battery_wh - watt_hours
         battery_percent = int(100 / (Battery.full_battery_wh / estimated_wh))
@@ -116,10 +131,8 @@ class Battery:
                     battery_percent = Battery.last_percent - 1
             Battery.last_percent = battery_percent
 
-        battery_percent = max(min(100, battery_percent), 0)
-        return f"{battery_percent}%{'?' if Battery.non_full_start_voltage else ''}"
-
-
+        battery_percent = stab(battery_percent, 0, 100)
+        return f"{battery_percent}%"
 
 class QTCommunication:
     # noinspection PyUnresolvedReferences
@@ -182,3 +195,20 @@ def restart_systemd_status(service: str) -> None:
     # time for starting service
     time.sleep(5)
     return None
+
+def distance_km_from_tachometer(tachometer: int) -> float:
+    # tacho_scale = (conf->si_wheel_diameter * M_PI) / (3.0 * conf->si_motor_poles * conf->si_gear_ratio)
+    # distance_meters = tachometer * tacho_scale;
+    from config import Config
+    wheel_diameter = Config.wheel_diameter / 1000
+
+    if Config.motor_magnets < 1: return 0
+    scale = (wheel_diameter * 3.1415926535) / (3.0 * Config.motor_magnets)
+    distance_m = tachometer * scale
+    return round(distance_m / 1000, 2)
+
+def map_ard(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def stab(x, in_min, in_max):
+    return max(min(in_max, x), in_min)
