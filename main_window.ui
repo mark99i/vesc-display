@@ -204,6 +204,9 @@ border: none;</string>
     <property name="text">
      <string>-120A / -1000W / -00A</string>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLineEdit" name="left_param">
     <property name="geometry">
@@ -236,6 +239,9 @@ border: none;</string>
     </property>
     <property name="text">
      <string>1000W</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLineEdit" name="right_param">
@@ -270,6 +276,9 @@ border: none;</string>
     <property name="text">
      <string>00000</string>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLineEdit" name="date">
     <property name="geometry">
@@ -303,6 +312,9 @@ border: none;</string>
     <property name="text">
      <string>21.06.21</string>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLineEdit" name="time">
     <property name="geometry">
@@ -335,6 +347,9 @@ border: none;</string>
     </property>
     <property name="text">
      <string>13:52:22</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="settings_button">
@@ -391,6 +406,9 @@ border-color: rgb(255, 255, 255);</string>
      <font>
       <family>Consolas</family>
       <pointsize>22</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
      </font>
     </property>
     <property name="focusPolicy">
@@ -405,6 +423,7 @@ border-color: rgb(255, 255, 255);</string>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);
 font: 22pt &quot;Consolas&quot;;
+font-weight: bold;
 text-align: center;</string>
     </property>
     <property name="inputMethodHints">
@@ -473,6 +492,8 @@ T:  99.9°С</string>
      <font>
       <family>Consolas</family>
       <pointsize>22</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
      </font>
     </property>
     <property name="focusPolicy">
@@ -487,6 +508,7 @@ T:  99.9°С</string>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);
 font: 22pt &quot;Consolas&quot;;
+font-weight: bold;
 text-align: center;</string>
     </property>
     <property name="inputMethodHints">
@@ -570,7 +592,7 @@ border: none;</string>
     <property name="geometry">
      <rect>
       <x>330</x>
-      <y>0</y>
+      <y>40</y>
       <width>121</width>
       <height>31</height>
      </rect>

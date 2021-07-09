@@ -4,14 +4,26 @@ import os
 import sys
 import subprocess
 import time
+from enum import Enum
 from threading import Thread
 
 from PyQt5.QtChart import QChart, QLineSeries
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QPen, QColor
 
+class ButtonPos(Enum):
+    RIGHT_PARAM = "right_param"
+    LEFT_PARAM = "left_param"
 
-
+class ParamIndicators(Enum):
+    BatteryPercent = 0
+    SessionDistance = 1
+    Odometer = 2
+    UpdatesPerSecond = 3
+    WhKm = 4
+    WhKmInNSec = 5
+    BatteryEstDistance = 6
+    AverageSpeed = 7
 
 def get_script_dir(follow_symlinks=True):
     if getattr(sys, 'frozen', False): # py2exe, PyInstaller, cx_Freeze
@@ -21,7 +33,6 @@ def get_script_dir(follow_symlinks=True):
     if follow_symlinks:
         path = os.path.realpath(path)
     return os.path.dirname(path)
-
 
 chart_current_pen = None
 chart_speed_pen = None
@@ -80,14 +91,14 @@ class Battery:
     last_percent: int = -100
 
     @staticmethod
-    def init(now_voltage):
+    def init(now_voltage, now_distance):
         from config import Config
         if Config.battery_cells < 1 or Config.battery_mah < 500:
             return
         Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
         Battery.display_start_voltage = now_voltage
 
-        if Battery.is_full_charged(now_voltage):
+        if Battery.is_full_charged(now_voltage, now_distance):
             Battery.full_tracking_disabled = False
         else:
             Battery.full_tracking_disabled = True
@@ -98,12 +109,13 @@ class Battery:
         Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
 
     @staticmethod
-    def is_full_charged(now_voltage: int) -> bool:
+    def is_full_charged(now_voltage: int, now_distance) -> bool:
         from config import Config
         max_battery_voltage = Config.battery_cells * Battery.MAX_CELL_VOLTAGE
         min_voltage_for_full_charge = max_battery_voltage - (max_battery_voltage / 100 / 2) # max_voltage - 0.5%
+        full_battery = now_voltage >= min_voltage_for_full_charge
 
-        return now_voltage >= min_voltage_for_full_charge
+        return full_battery and now_distance < 1.1
 
     @staticmethod
     def calculate_battery_percent(voltage: float, watt_hours: int) -> str:

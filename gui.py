@@ -3,12 +3,13 @@ import time
 from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QCursor
+from PyQt5.QtGui import QPainter, QIcon, QPixmap, QCursor, QMouseEvent
 from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
-    QTextEdit
+    QTextEdit, QMenu, QAction
 
 import data_updater
 import utils
+from utils import ButtonPos, ParamIndicators
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
@@ -61,9 +62,12 @@ class GUIApp:
     data_updater_thread: data_updater.WorkerThread = None
 
     alt = False
+    right_param_active_ind = ParamIndicators.SessionDistance
+    left_param_active_ind = ParamIndicators.BatteryPercent
 
     last_time = 0
     reqs = 0
+    updates_in_sec = 0
 
     def __init__(self):
         self.app = QApplication([])
@@ -106,7 +110,10 @@ class GUIApp:
         self.time.setAlignment(Qt.AlignCenter)
 
         self.right_param.mousePressEvent = self.on_click_right_param
-        self.right_param.setReadOnly(True)
+        self.left_param.mousePressEvent = self.on_click_left_param
+
+        self.right_param_active_ind = ParamIndicators[Config.right_param_active_ind]
+        self.left_param_active_ind = ParamIndicators[Config.left_param_active_ind]
 
         self.esc_b_element.lower()
         self.esc_a_element.lower()
@@ -131,10 +138,51 @@ class GUIApp:
     def on_click_uart_settings(self):
         self.service_status.show()
 
-    def on_click_right_param(self, event):
-        self.alt = not self.alt
+    def on_click_right_param(self, event: QMouseEvent):
+        #self.alt = not self.alt
         # TODO: alt func menu
+        self.show_menu_param_change(event, utils.ButtonPos.RIGHT_PARAM)
         pass
+
+    def on_click_left_param(self, event: QMouseEvent):
+        self.show_menu_param_change(event, utils.ButtonPos.LEFT_PARAM)
+        pass
+
+    def show_menu_param_change(self, event, param_position: ButtonPos):
+        menu = QMenu(self.ui)
+        menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
+
+        actions = []
+        if param_position == ButtonPos.LEFT_PARAM or param_position == ButtonPos.RIGHT_PARAM:
+            for indicator in [i for i in utils.ParamIndicators]:
+                name: str = indicator.name
+                if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
+                    name = "✔ " + name
+                if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
+                    name = "✔ " + name
+                action = QAction()
+                action.setData(param_position)
+                action.setText(name)
+                actions.append(action)
+
+        menu.triggered.connect(self.menu_param_choosen)
+        menu.addActions(actions)
+        menu.exec(event.globalPos())
+
+    def menu_param_choosen(self, action: QAction):
+        choosen_item = action.text()
+        param_pos = action.data()
+        if " " in choosen_item: return
+
+        print("set", choosen_item, "to", param_pos)
+
+        if param_pos == ButtonPos.RIGHT_PARAM:
+            self.right_param_active_ind = ParamIndicators[choosen_item]
+            Config.right_param_active_ind = ParamIndicators[choosen_item].name
+        if param_pos == ButtonPos.LEFT_PARAM:
+            self.left_param_active_ind = ParamIndicators[choosen_item]
+            Config.left_param_active_ind = ParamIndicators[choosen_item].name
+        Config.save()
 
     def callback_update_gui(self, state: GUIState):
         if self.settings.ui.isVisible():
@@ -159,9 +207,18 @@ class GUIApp:
 
         self.main_speed_lcd.display(str(round(state.speed, 1)))
 
-        self.left_param.setText(state.battery_percent_str)
-        if not self.alt:
-            self.right_param.setText(str(Odometer.session_mileage)[:4])
+        all_params_values = dict()
+        all_params_values[0] = state.battery_percent_str
+        all_params_values[1] = str(Odometer.session_mileage)[:4]
+        all_params_values[2] = str(int(Odometer.full_odometer))
+        all_params_values[3] = str(self.updates_in_sec)
+        all_params_values[4] = str(round(state.wh_km, 1))
+        all_params_values[5] = str(round(state.wh_km_Ns, 1))
+        all_params_values[6] = str(state.estimated_battery_distance)[:4]
+        all_params_values[7] = "-"
+
+        self.left_param.setText(all_params_values[self.left_param_active_ind.value])
+        self.right_param.setText(all_params_values[self.right_param_active_ind.value])
 
         lt = time.localtime()
         self.date.setText(time.strftime("%d.%m.%y", lt))
@@ -180,10 +237,7 @@ class GUIApp:
         if self.last_time < int(time.time()):
             if Config.chart_current_points > 0 or Config.chart_current_points > 0:
                 utils.set_chart_series(self.chart, state.chart_current, state.chart_speed)
-            print(self.reqs)
-            if self.alt:
-                self.right_param.setText(str(self.reqs))
-            #print(utils.Battery.full_tracking_disabled)
+            self.updates_in_sec = self.reqs
             self.reqs = 0
             self.last_time = int(time.time())
         pass

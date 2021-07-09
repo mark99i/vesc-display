@@ -11,10 +11,14 @@ class Config:
     chart_current_points: int = 200
     chart_speed_points: int = 200
 
+    wh_km_nsec_calc_interval: int = 15
+
     hw_controller_current_limit: int = 135
 
     switch_a_b_esc: int = 0
     esc_b_id: int = -1
+
+    write_logs: int = 0
 
     motor_magnets: int = 30
     wheel_diameter: int = 250
@@ -33,6 +37,9 @@ class Config:
     gpio_1wire_bus_pin: int = 0                     # invisible in settings
 
     odometer_distance_km_backup: float = 0          # invisible in settings
+
+    right_param_active_ind: str = "SessionDistance" # invisible in settings
+    left_param_active_ind: str = "BatteryPercent"   # invisible in settings
 
     @staticmethod
     def load():

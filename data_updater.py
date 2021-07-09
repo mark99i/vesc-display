@@ -5,13 +5,44 @@ import network
 import utils
 from config import Config, Odometer
 from gui_state import GUIState, ESCState
+from session_log import SessionLog
 
 
 class WorkerThread(Thread):
     callback = None
     stopped_flag = False
 
+    class WH_KM_Ns:
+        last_update_ts_s: int = -1
+        calculated_value: float = 0.0
+        watts: float = 0.0
+        distance: float = -1
+
+        def get_value(self, watts_used: float, now_distance: float):
+            now_time_s = int(time.time())
+
+            if self.distance == -1:
+                self.distance = now_distance
+                self.watts = watts_used
+                self.last_update_ts_s = now_time_s
+                return self.calculated_value
+
+            if now_time_s - self.last_update_ts_s > Config.wh_km_nsec_calc_interval:
+                watt_used_in_n_sec = watts_used - self.watts
+                distance_in_n_sec = now_distance - self.distance
+                if distance_in_n_sec > 0:
+                    self.calculated_value = watt_used_in_n_sec / distance_in_n_sec
+                else:
+                    self.calculated_value = 0.0
+                self.distance = now_distance
+                self.watts = watts_used
+                self.last_update_ts_s = now_time_s
+
+            return self.calculated_value
+
+    wh_km_Ns_calc = WH_KM_Ns()
     state = GUIState()
+    log = SessionLog()
 
     def __init__(self, callback):
         Thread.__init__(self)
@@ -19,6 +50,7 @@ class WorkerThread(Thread):
 
     def setup(self):
         Odometer.load()
+        self.log.init()
         if Config.odometer_distance_km_backup > Odometer.full_odometer:
             # restore from config
             Odometer.full_odometer = Config.odometer_distance_km_backup
@@ -83,14 +115,11 @@ class WorkerThread(Thread):
                 if state.esc_b_state.controller_a_b != "?":
                     erpm = (state.esc_a_state.erpm + state.esc_b_state.erpm) / 2
                     voltage = (state.esc_a_state.voltage + state.esc_b_state.voltage) / 2
-                    watt_hours = state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used
+                    watt_hours_used = state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used
                 else:
                     erpm = state.esc_a_state.erpm
                     voltage = state.esc_a_state.voltage
-                    watt_hours = state.esc_a_state.watt_hours_used
-
-                if utils.Battery.display_start_voltage == 0:
-                    utils.Battery.init(voltage)
+                    watt_hours_used = state.esc_a_state.watt_hours_used
 
                 if Config.motor_magnets < 1:
                     rpm = 0
@@ -111,16 +140,23 @@ class WorkerThread(Thread):
                 if Config.chart_speed_points > 0:
                     state.chart_speed.append(state.speed)
 
-                state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours)
-
                 now_distance = utils.distance_km_from_tachometer(state.esc_a_state.tachometer)
                 if now_distance < Odometer.session_mileage:
                     Odometer.full_odometer += Odometer.session_mileage
                     Odometer.save()
-                    print("save old session")
-
                 Odometer.session_mileage = now_distance
 
+                if utils.Battery.display_start_voltage == 0:
+                    utils.Battery.init(voltage, now_distance)
+
+                state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours_used)
+                if now_distance > 0:
+                    state.wh_km = watt_hours_used / now_distance
+                state.estimated_battery_distance = (utils.Battery.full_battery_wh - watt_hours_used) / state.wh_km
+                state.wh_km_Ns = self.wh_km_Ns_calc.get_value(watt_hours_used, now_distance)
+
+                state.builded_ts_ms = int(time.time() * 1000)
+                self.log.write_state(state)
             else:
                 time.sleep(0.1)
 

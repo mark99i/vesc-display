@@ -1,15 +1,12 @@
-from threading import Thread
-
 # noinspection PyUnresolvedReferences
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot, QModelIndex
+from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
 from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QScroller
 
 import network
 import utils
 from config import Config
-from gui_state import GUIState
 
 
 class GUISettingsIntMod(QDialog):
@@ -192,22 +189,24 @@ class GUISettings:
         self.list_view.clicked[QModelIndex].connect(self.clicked_item)
         pass
 
-    def get_list_item(self, text: str, separator: bool = False, disabled: bool = False):
+    def get_list_item(self, text: str, disabled: bool = False):
         item = QStandardItem(text)
         item.setEditable(False)
-        #if separator: item.setCheckState(False)
         if disabled: item.setEnabled(False)
         return item
 
     def reload_list(self):
-        invisible_options = ['serial_vesc_api', 'gpio_enabled', 'gpio_break_signal_pin', 'gpio_1wire_bus_pin', 'odometer_distance_km_backup']
+        invisible_options = ['serial_vesc_api', 'gpio_enabled',
+                             'gpio_break_signal_pin', 'gpio_1wire_bus_pin',
+                             'odometer_distance_km_backup', 'left_param_active_ind',
+                             'right_param_active_ind']
 
         # TODO: modify odometer
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
         self.list_model.appendRow(self.get_list_item(f"modify odometer [{Config.odometer_distance_km_backup}]", disabled=True))
-        self.list_model.appendRow(self.get_list_item("-----------------", separator=True))
+        self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
         conf = Config.get_as_dict()
         for name in conf.keys():
             if name in invisible_options: continue
@@ -241,6 +240,8 @@ class GUISettings:
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "chart_current_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
+        elif parameter_name == "wh_km_nsec_calc_interval":
+            self.open_int_mod(parameter_name, 1, 1, 240)
         elif parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":

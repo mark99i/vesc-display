@@ -26,6 +26,8 @@ class ESCState:
         self.controller_a_b = controller_a_b
         self.phase_current = int(json["avg_motor_current"])
 
+        self.controller_a_b = str(json["controller_id"])
+
         if self.phase_current > 42949:
             self.phase_current -= 42949673
 
@@ -75,8 +77,12 @@ class GUIState:
 
     battery_percent_str: str = None
 
-    last_update_time_ms: int = 0
-    refresh_interval_ms: int = 30
+    wh_km: float = 0.0
+    wh_km_Ns: float = 0.0
+
+    estimated_battery_distance: float = 0.0
+
+    builded_ts_ms: int = 0
 
     UART_STATUS_WORKING_SUCCESS = "success"
     UART_STATUS_WORKING_ERROR = "tmp_error"
@@ -85,6 +91,24 @@ class GUIState:
 
     uart_status = UART_STATUS_UNKNOWN
 
+    def __init__(self):
+        self.esc_a_state = ESCState("?")
+        self.esc_b_state = ESCState("?")
+        self.uart_status = GUIState.UART_STATUS_UNKNOWN
+
+    def get_json_for_log(self) -> dict:
+        result = {}
+
+        for i in self.__dict__.keys():
+            i = str(i)
+            if i.startswith("__") or i == "get_json_for_log":
+                continue
+
+            if i.startswith("esc_"):
+                result[i] = vars(getattr(self, i))
+            else:
+                result[i] = self.__dict__[i]
+        return result
 
 
 
