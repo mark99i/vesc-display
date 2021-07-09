@@ -10,7 +10,7 @@ class ESCState:
     phase_current: int = 0
     power: int = 0
 
-    watt_hours_used: int = 0
+    watt_hours_used: float = 0
 
     battery_current: int = 0
     voltage: float = 0.0
@@ -47,7 +47,7 @@ class ESCState:
             self.erpm -= 42949673
         self.tachometer = json["tachometer"]
 
-        self.watt_hours_used = int(json["watt_hours"] - json["watt_hours_charged"])
+        self.watt_hours_used = json["watt_hours"] - json["watt_hours_charged"]
 
         if self.phase_current != 0:
             self.load_percent = int( 100 / (float(Config.hw_controller_current_limit) / float(self.phase_current)) )

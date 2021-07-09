@@ -126,6 +126,8 @@ class WorkerThread(Thread):
                 else:
                     rpm = erpm / (Config.motor_magnets / 2)
                 speed = (Config.wheel_diameter / 10) * rpm * 0.001885
+                if speed > 99:
+                    speed = 0.0
                 state.speed = round(speed, 1)
 
                 state.full_power = state.esc_a_state.power + state.esc_b_state.power
@@ -152,7 +154,10 @@ class WorkerThread(Thread):
                 state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours_used)
                 if now_distance > 0:
                     state.wh_km = watt_hours_used / now_distance
-                state.estimated_battery_distance = (utils.Battery.full_battery_wh - watt_hours_used) / state.wh_km
+                if state.wh_km == 0:
+                    state.estimated_battery_distance = 0
+                else:
+                    state.estimated_battery_distance = (utils.Battery.full_battery_wh - watt_hours_used) / state.wh_km
                 state.wh_km_Ns = self.wh_km_Ns_calc.get_value(watt_hours_used, now_distance)
 
                 state.builded_ts_ms = int(time.time() * 1000)
