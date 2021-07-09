@@ -85,6 +85,7 @@ class Battery:
         if Config.battery_cells < 1 or Config.battery_mah < 500:
             return
         Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
+        Battery.display_start_voltage = now_voltage
 
         if Battery.is_full_charged(now_voltage):
             Battery.full_tracking_disabled = False

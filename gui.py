@@ -183,6 +183,7 @@ class GUIApp:
             print(self.reqs)
             if self.alt:
                 self.right_param.setText(str(self.reqs))
+            #print(utils.Battery.full_tracking_disabled)
             self.reqs = 0
             self.last_time = int(time.time())
         pass
