@@ -1,3 +1,4 @@
+import copy
 import time
 
 import ujson as json
@@ -30,19 +31,17 @@ class SessionLog:
 
     def logging_thread_func(self):
         while True:
-            while self.log_states_queue.qsize() < 100:
+            while self.log_states_queue.qsize() < 50:
                 time.sleep(1)
                 continue
 
             file = open(self.log_file_path, "a")
 
             while True:
-                try: state: GUIState = self.log_states_queue.get(block=False)
+                try: state: str = self.log_states_queue.get(block=False)
                 except: break
 
-                text_state = json.dumps(state.get_json_for_log())
-
-                file.write(text_state)
+                file.write(state)
                 file.write("\n")
 
             os.fsync(file)
@@ -50,9 +49,9 @@ class SessionLog:
 
             print("written log")
 
-    def write_state(self, state: GUIState):
+    def write_state(self, state_d: str):
         if not self.have_init:
             self.init()
 
         if Config.write_logs:
-            self.log_states_queue.put(state)
+            self.log_states_queue.put(state_d)

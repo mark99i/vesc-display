@@ -27,15 +27,8 @@ class ESCState:
         self.phase_current = int(json["avg_motor_current"])
 
         self.controller_a_b = str(json["controller_id"])
-
-        if self.phase_current > 42949:
-            self.phase_current -= 42949673
-
         self.battery_current = json["avg_input_current"]
         self.voltage = json["voltage"]
-
-        if self.battery_current > 42949:        # TODO: need refactor !!
-            self.battery_current -= 42949673
 
         self.power = int(self.battery_current * self.voltage)
 
@@ -43,9 +36,9 @@ class ESCState:
 
         self.temperature = json["temp_fet_filtered"]
         self.erpm = json["rpm"]
-        if self.erpm > 42949:       # TODO: test it
-            self.erpm -= 42949673
         self.tachometer = json["tachometer"]
+        if self.erpm < 0:
+            self.erpm *= -1
 
         self.watt_hours_used = json["watt_hours"] - json["watt_hours_charged"]
 
@@ -65,6 +58,10 @@ class ESCState:
             f"L: {self.load_percent}%\n" \
             f"T: {self.temperature}°С"
 
+    def parse_from_log(self, js: dict):
+        for i in js.keys():
+            setattr(self, i, js[i])
+
 class GUIState:
     speed: float = 0.0
     chart_current: list = []
@@ -81,6 +78,10 @@ class GUIState:
     wh_km_Ns: float = 0.0
 
     estimated_battery_distance: float = 0.0
+    session_distance: float = 0.0
+
+    average_speed: float = 0.0
+    maximum_speed: float = 0.0
 
     builded_ts_ms: int = 0
 
@@ -99,16 +100,28 @@ class GUIState:
     def get_json_for_log(self) -> dict:
         result = {}
 
-        for i in self.__dict__.keys():
+        asdict = dict((name, getattr(self, name)) for name in dir(self))
+        for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i == "get_json_for_log":
+            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_"):
                 continue
 
             if i.startswith("esc_"):
                 result[i] = vars(getattr(self, i))
             else:
-                result[i] = self.__dict__[i]
+                result[i] = asdict[i]
         return result
+
+    def parse_from_log(self, js: dict):
+        for i in js.keys():
+            if i == "esc_a_state":
+                self.esc_a_state.parse_from_log(js[i])
+                continue
+            if i == "esc_b_state":
+                self.esc_b_state.parse_from_log(js[i])
+                continue
+
+            setattr(self, i, js[i])
 
 
 

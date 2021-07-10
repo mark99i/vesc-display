@@ -1,22 +1,24 @@
 import time
 
+# noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QCursor, QMouseEvent
+from PyQt5.QtGui import QPainter, QIcon, QPixmap, QMouseEvent
 from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
     QTextEdit, QMenu, QAction
 
 import data_updater
 import utils
+from gui_session import GUISession
 from utils import ButtonPos, ParamIndicators
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
-# noinspection PyUnresolvedReferences
 from service_status import GUIServiceState
 
 
+# noinspection PyUnresolvedReferences
 class Communicate(QObject):
     closeApp = pyqtSignal(GUIState)
 
@@ -40,6 +42,7 @@ class GUIApp:
 
     settings: GUISettings = None
     service_status: GUIServiceState = None
+    session_info: GUISession = None
 
     main_speed_lcd: QLCDNumber = None
     chart: QChart = None
@@ -61,7 +64,6 @@ class GUIApp:
 
     data_updater_thread: data_updater.WorkerThread = None
 
-    alt = False
     right_param_active_ind = ParamIndicators.SessionDistance
     left_param_active_ind = ParamIndicators.BatteryPercent
 
@@ -76,6 +78,7 @@ class GUIApp:
 
         self.settings = GUISettings()
         self.service_status = GUIServiceState(self)
+        self.session_info = GUISession(self)
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
@@ -111,6 +114,7 @@ class GUIApp:
 
         self.right_param.mousePressEvent = self.on_click_right_param
         self.left_param.mousePressEvent = self.on_click_left_param
+        self.main_power.mousePressEvent = self.on_click_center_param
 
         self.right_param_active_ind = ParamIndicators[Config.right_param_active_ind]
         self.left_param_active_ind = ParamIndicators[Config.left_param_active_ind]
@@ -147,6 +151,9 @@ class GUIApp:
     def on_click_left_param(self, event: QMouseEvent):
         self.show_menu_param_change(event, utils.ButtonPos.LEFT_PARAM)
         pass
+
+    def on_click_center_param(self, event: QMouseEvent):
+        self.session_info.show()
 
     def show_menu_param_change(self, event, param_position: ButtonPos):
         menu = QMenu(self.ui)
@@ -189,6 +196,8 @@ class GUIApp:
             return
         if self.service_status.ui.isVisible():
             return
+        if self.session_info.ui.isVisible():
+            return
 
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
         self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
@@ -198,29 +207,27 @@ class GUIApp:
                     f'{state.esc_a_state.battery_current + state.esc_b_state.battery_current}A'
         self.main_power.setText(power_str)
 
-        #if state.speed > 0:
-        #    wt_kmh = int((state.esc_a_state.power + state.esc_b_state.power) / state.speed)
-        #    self.left_param.setText(f"{wt_kmh}W")
-        #else:
-        #    self.left_param.setText("0W")
-        #self.left_param.setText()
+        wh_km_h = 0.0
+        if state.speed > 0:
+            wh_km_h = utils.stab(round((state.esc_a_state.power + state.esc_b_state.power) / state.speed, 1), -99.9, 99.9)
 
         self.main_speed_lcd.display(str(round(state.speed, 1)))
 
         all_params_values = dict()
         all_params_values[0] = state.battery_percent_str
-        all_params_values[1] = str(Odometer.session_mileage)[:4]
+        all_params_values[1] = str(state.session_distance)[:4]
         all_params_values[2] = str(int(Odometer.full_odometer))
         all_params_values[3] = str(self.updates_in_sec)
         all_params_values[4] = str(round(state.wh_km, 1))
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
         all_params_values[6] = str(state.estimated_battery_distance)[:4]
-        all_params_values[7] = "-"
+        all_params_values[7] = str(wh_km_h)
+        all_params_values[8] = str(round(state.average_speed, 1))
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
         self.right_param.setText(all_params_values[self.right_param_active_ind.value])
 
-        lt = time.localtime()
+        lt = time.localtime(state.builded_ts_ms / 1000)
         self.date.setText(time.strftime("%d.%m.%y", lt))
         self.time.setText(time.strftime("%H:%M:%S", lt))
 

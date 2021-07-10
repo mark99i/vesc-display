@@ -7,8 +7,8 @@ import time
 from enum import Enum
 from threading import Thread
 
-from PyQt5.QtChart import QChart, QLineSeries
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
+from PyQt5.QtChart import QChart, QLineSeries, QLogValueAxis
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, Qt
 from PyQt5.QtGui import QPen, QColor
 
 class ButtonPos(Enum):
@@ -23,7 +23,8 @@ class ParamIndicators(Enum):
     WhKm = 4
     WhKmInNSec = 5
     BatteryEstDistance = 6
-    AverageSpeed = 7
+    WhKmH = 7
+    AverageSpeed = 8
 
 def get_script_dir(follow_symlinks=True):
     if getattr(sys, 'frozen', False): # py2exe, PyInstaller, cx_Freeze
@@ -167,7 +168,7 @@ class QTCommunication:
             try:
                 result = self.worker(self.arg)
             except Exception as e:
-                if "takes 0 positional arguments but 1 was given" in str(e):
+                if " positional argument" in str(e):
                     result = self.worker()
                 else:
                     print("bg exc:",e)

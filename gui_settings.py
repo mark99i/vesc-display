@@ -241,7 +241,7 @@ class GUISettings:
         elif parameter_name == "chart_current_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "wh_km_nsec_calc_interval":
-            self.open_int_mod(parameter_name, 1, 1, 240)
+            self.open_int_mod(parameter_name, 1, -1, 240)
         elif parameter_name == "write_logs":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":

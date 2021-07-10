@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="test" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="play log" type="PythonConfigurationType" factoryName="Python">
     <module name="vesc-display" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -11,8 +11,8 @@
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
-    <option name="PARAMETERS" value="" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+    <option name="PARAMETERS" value="&quot;C:\Users\Mark\PycharmProjects\vesc-display\session_log.json&quot;" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

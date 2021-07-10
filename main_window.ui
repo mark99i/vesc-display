@@ -76,6 +76,9 @@
       <kerning>false</kerning>
      </font>
     </property>
+    <property name="cursor">
+     <cursorShape>BlankCursor</cursorShape>
+    </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);
 background: rgba(0,0,0,0.0);</string>
@@ -102,9 +105,9 @@ background: rgba(0,0,0,0.0);</string>
    <widget class="QChartView" name="chart" native="true">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>140</x>
       <y>180</y>
-      <width>331</width>
+      <width>351</width>
       <height>261</height>
      </rect>
     </property>
@@ -130,6 +133,9 @@ background: rgba(0,0,0,0.0);</string>
      <font>
       <pointsize>60</pointsize>
      </font>
+    </property>
+    <property name="cursor">
+     <cursorShape>BlankCursor</cursorShape>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -304,7 +310,7 @@ border: none;</string>
      </font>
     </property>
     <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
+     <cursorShape>BlankCursor</cursorShape>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);</string>
@@ -340,7 +346,7 @@ border: none;</string>
      </font>
     </property>
     <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
+     <cursorShape>BlankCursor</cursorShape>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(255, 255, 255);</string>
@@ -410,6 +416,9 @@ border-color: rgb(255, 255, 255);</string>
       <italic>false</italic>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="cursor" stdset="0">
+     <cursorShape>BlankCursor</cursorShape>
     </property>
     <property name="focusPolicy">
      <enum>Qt::NoFocus</enum>
@@ -495,6 +504,9 @@ T:  99.9°С</string>
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="cursor" stdset="0">
+     <cursorShape>BlankCursor</cursorShape>
     </property>
     <property name="focusPolicy">
      <enum>Qt::NoFocus</enum>
