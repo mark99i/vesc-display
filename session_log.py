@@ -1,27 +1,30 @@
-import copy
 import time
-
-import ujson as json
 import os
 import threading
-from queue import Queue
+from queue import Queue, Empty
 
 import utils
 from config import Config
-from gui_state import GUIState
+
 
 class SessionLog:
+    LOGS_WRITE_DISK_EVENTS = 50
+
     have_init = False
-    log_file_path = utils.get_script_dir() + "/session_log.json"
-    old_log_file_path = utils.get_script_dir() + "/session_log_old.json"
+    log_file_path = None
 
     log_states_queue = Queue()
 
     def init(self):
         if self.have_init: return
 
+        lt = time.localtime()
+        dt = time.strftime("%d.%m.%Y", lt) + "_" + time.strftime("%H.%M.%S", lt)
+
+        self.log_file_path = f"{utils.get_script_dir()}/logs/session_{dt}.log"
+
         if os.path.isfile(self.log_file_path):
-            os.replace(self.log_file_path, self.old_log_file_path)
+            os.replace(self.log_file_path, self.log_file_path + ".old")
 
         with open(self.log_file_path, "w") as fp:
             os.fsync(fp)
@@ -31,7 +34,7 @@ class SessionLog:
 
     def logging_thread_func(self):
         while True:
-            while self.log_states_queue.qsize() < 50:
+            while self.log_states_queue.qsize() < SessionLog.LOGS_WRITE_DISK_EVENTS and Config.write_logs:
                 time.sleep(1)
                 continue
 
@@ -39,7 +42,7 @@ class SessionLog:
 
             while True:
                 try: state: str = self.log_states_queue.get(block=False)
-                except: break
+                except Empty: break
 
                 file.write(state)
                 file.write("\n")
@@ -47,11 +50,13 @@ class SessionLog:
             os.fsync(file)
             file.close()
 
-            print("written log")
+            if not Config.write_logs:
+                break
+
+        self.have_init = False
 
     def write_state(self, state_d: str):
         if not self.have_init:
             self.init()
 
-        if Config.write_logs:
-            self.log_states_queue.put(state_d)
+        self.log_states_queue.put(state_d)

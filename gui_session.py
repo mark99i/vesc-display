@@ -1,13 +1,19 @@
 # noinspection PyUnresolvedReferences
+import threading
+
+# noinspection PyUnresolvedReferences
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QPlainTextEdit
 
+from battery import Battery
 from config import Odometer
-from gui_state import GUIState
 from utils import *
 
 
 class GUISession:
+    AUTOUPDATE_INTERVAL_SEC = 5
+
     ui: QDialog = None
     parent = None
 
@@ -18,7 +24,7 @@ class GUISession:
     b_bt_switch: QPushButton = None
 
     def __init__(self, parent):
-        self.ui = uic.loadUi(get_script_dir(False) + "/session_info.ui")
+        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/session_info_{get_skin_size_for_display()}.ui")
         from gui import GUIApp
         self.parent: GUIApp = parent
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
@@ -32,25 +38,36 @@ class GUISession:
         self.b_bt_switch.clicked.connect(self.click_bt_switch)
 
     def show(self):
-        self.show_text_stats(self.parent.data_updater_thread.state)
-        self.update_battery_tracking_state()
         self.ui.show()
+        self.update_text_stats()
 
-    def show_text_stats(self, state: GUIState):
+    def update_text_stats(self):
+        data_updater_thread = self.parent.data_updater_thread
+        state = data_updater_thread.state
         watt_h_used = int(state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used)
 
         text = f"""
 session distance: {Odometer.session_mileage} km
-average speed: {state.average_speed} km/h
-maximum speed: {state.maximum_speed} km/h
+session average speed: {state.average_speed} km/h
+session maximum speed: {state.maximum_speed} km/h
 
-watt_hours: used {watt_h_used} from {Battery.full_battery_wh} wh 
-watt_hours_on_km: {round(state.wh_km, 2)} wh/km
+watt hours used {watt_h_used} from {Battery.full_battery_wh}, est ~{Battery.full_battery_wh - watt_h_used} wh 
+watt hours/km: {round(state.wh_km, 2)} wh/km
 
+session maximum fet temp: {data_updater_thread.session_holder.ft_max} °С
+
+---
 odometer: {round(Odometer.full_odometer, 2)} km
 """
 
         self.le_stats.setPlainText(text[1:-1])
+        self.update_battery_tracking_state()
+
+        if self.ui.isActiveWindow():
+            # threading.Timer not working because him execute function not in UI thread
+            QTCommunication.run_func_in_background(self.ui,
+                                                   need_run=lambda: time.sleep(GUISession.AUTOUPDATE_INTERVAL_SEC),
+                                                   callback=self.update_text_stats)
         pass
 
     def update_battery_tracking_state(self):

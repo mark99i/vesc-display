@@ -43,7 +43,7 @@ class Network:
                                             timeout=Network.net_timeout).content
             answ = json.loads(content)
             return answ["success"]
-        except Exception as e:
+        except:
             return False
 
     @staticmethod

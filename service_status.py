@@ -1,14 +1,13 @@
 import json
 
+# noinspection PyUnresolvedReferences
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot, QModelIndex
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
-from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QPlainTextEdit
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QPlainTextEdit
 
 import network
-import utils
-from config import Config
 from gui_state import GUIState
+from utils import get_script_dir, get_skin_size_for_display, QTCommunication, get_systemd_status, restart_systemd_status
 
 
 class GUIServiceState:
@@ -26,7 +25,7 @@ class GUIServiceState:
     b_close: QPushButton = None
 
     def __init__(self, parent):
-        self.ui = uic.loadUi(utils.get_script_dir(False) + "/vesc_uart_status.ui")
+        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/vesc_uart_status_{get_skin_size_for_display()}.ui")
         self.parent = parent
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
         self.ui.setStyleSheet("background-color: rgb(0, 0, 0); color: rgb(255, 255, 255);")
@@ -52,7 +51,7 @@ class GUIServiceState:
     def on_get_systemd_status(self, status: str):
         self.le_systemd.setText(f"systemd state: {status}")
         if "running" in status:
-            utils.QTCommunication.run_func_in_background(self.ui, network.Network.get_uart_status, self.on_get_uart_status)
+            QTCommunication.run_func_in_background(self.ui, network.Network.get_uart_status, self.on_get_uart_status)
             self.le_con_state.setText("serial state: loading...")
             self.le_esc_id.setText("local controller id: loading...")
         else:
@@ -80,10 +79,11 @@ class GUIServiceState:
         self.le_stats.setPlainText("...")
         self.b_upd.setText("please\nwait")
         self.b_upd.setEnabled(False)
-        utils.QTCommunication.run_func_in_background(self.ui, utils.get_systemd_status,
+        QTCommunication.run_func_in_background(self.ui, get_systemd_status,
                                                      self.on_get_systemd_status, push_args="vesc-uart")
         pass
 
+    # noinspection PyUnusedLocal
     def on_service_restarted(self, arg):
         self.b_restart.setText("restart\nservice")
         self.b_restart.setEnabled(True)
@@ -92,10 +92,10 @@ class GUIServiceState:
     def click_restart(self):
         self.b_restart.setText("please\nwait")
         self.b_restart.setEnabled(False)
-        utils.QTCommunication.run_func_in_background(self.ui, utils.restart_systemd_status,
+        QTCommunication.run_func_in_background(self.ui, restart_systemd_status,
                                                      self.on_service_restarted, push_args="vesc-uart")
 
-
+    # noinspection PyUnusedLocal
     def on_serial_reconnected(self, arg):
         self.b_connect.setText("reconnect\nserial")
         self.b_connect.setEnabled(True)
@@ -104,7 +104,7 @@ class GUIServiceState:
     def click_reconnect(self):
         self.b_connect.setText("please\nwait")
         self.b_connect.setEnabled(False)
-        utils.QTCommunication.run_func_in_background(self.ui, network.Network.connect, self.on_serial_reconnected)
+        QTCommunication.run_func_in_background(self.ui, network.Network.connect, self.on_serial_reconnected)
         pass
 
     def click_close(self):

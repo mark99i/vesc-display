@@ -5,8 +5,9 @@ from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
 from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QScroller
 
 import network
-import utils
-from config import Config
+from battery import Battery
+from config import Config, Odometer
+from utils import get_script_dir, get_skin_size_for_display, QTCommunication
 
 
 class GUISettingsIntMod(QDialog):
@@ -27,7 +28,10 @@ class GUISettingsIntMod(QDialog):
         self.on_close_change_val = on_close_change_val
         self.parameter_name = parameter
         self.change_step = step
-        self.parameter_val = getattr(Config, parameter)
+        if parameter != "_odometer":
+            self.parameter_val = getattr(Config, parameter)
+        else:
+            self.parameter_val = int(Odometer.full_odometer)
         self.val_min = val_min
         self.val_max = val_max
 
@@ -105,9 +109,16 @@ class GUISettingsIntMod(QDialog):
         pass
 
     def click_ok(self):
-        setattr(Config, self.parameter_name, self.parameter_val)
+        if self.parameter_name != "_odometer":
+            setattr(Config, self.parameter_name, self.parameter_val)
+        else:
+            Odometer.full_odometer = float(self.parameter_val)
+            Config.odometer_distance_km_backup = float(self.parameter_val)
+            Odometer.save()
         Config.save()
         self.on_close_change_val()
+        if self.parameter_name == "battery_cells" or self.parameter_name == "battery_mah":
+            Battery.recalc_full_battery_wh()
         self.destroy()
         pass
 
@@ -143,7 +154,7 @@ class GUISettingsGetSettings(QDialog):
         self.close.setDisabled(True)
 
     def show(self):
-        utils.QTCommunication.run_func_in_background(self, network.Network.COMM_GET_MCCONF, self.on_scan_ended)
+        QTCommunication.run_func_in_background(self, network.Network.COMM_GET_MCCONF, self.on_scan_ended)
         super().show()
 
     def on_scan_ended(self, data: dict):
@@ -158,6 +169,7 @@ class GUISettingsGetSettings(QDialog):
         Config.motor_magnets = mcconf["si_motor_poles"]
         Config.wheel_diameter = int(mcconf["si_wheel_diameter"] * 1000)
         Config.save()
+        Battery.recalc_full_battery_wh()
         self.textv.setText("command complete!")
 
     def click_cancel(self):
@@ -176,7 +188,7 @@ class GUISettings:
     opened_change_val = False
 
     def __init__(self):
-        self.ui = uic.loadUi(utils.get_script_dir(False) + "/settings.ui")
+        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/settings_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         close_button: QPushButton = self.ui.exit_settings
@@ -196,12 +208,6 @@ class GUISettings:
         return item
 
     def reload_list(self):
-        invisible_options = ['serial_vesc_api', 'gpio_enabled',
-                             'gpio_break_signal_pin', 'gpio_1wire_bus_pin',
-                             'odometer_distance_km_backup', 'left_param_active_ind',
-                             'right_param_active_ind']
-
-        # TODO: modify odometer
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
@@ -209,7 +215,7 @@ class GUISettings:
         self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
         conf = Config.get_as_dict()
         for name in conf.keys():
-            if name in invisible_options: continue
+            if name in Config.invisible_in_settings_options: continue
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
 
     def open_int_mod(self, parameter, step, val_min, val_max):
@@ -233,12 +239,14 @@ class GUISettings:
             parameter_name = parameter_name[0:parameter_name.find(":")]
 
         if   parameter_name == "delay_update_ms":
-            self.open_int_mod(parameter_name, 1, 1, 1000)
+            self.open_int_mod(parameter_name, 1, 5, 1000)
+        elif parameter_name == "delay_chart_update_ms":
+            self.open_int_mod(parameter_name, 1, 5, 1000)
         elif parameter_name == "esc_b_id":
             self.open_int_mod(parameter_name, 1, -1, 254)
         elif parameter_name == "chart_speed_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
-        elif parameter_name == "chart_current_points":
+        elif parameter_name == "chart_power_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "wh_km_nsec_calc_interval":
             self.open_int_mod(parameter_name, 1, -1, 240)
@@ -264,6 +272,8 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 0, 25)
         elif parameter_name == "get battery and motor from vesc":
             self.open_get_battery_motor_from_vesc()
+        elif parameter_name.startswith("modify odometer "):
+            self.open_int_mod("_odometer", 50, 0, 100000)
 
     def show(self):
         self.reload_list()

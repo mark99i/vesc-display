@@ -7,8 +7,9 @@ import utils
 
 
 class Config:
-    delay_update_ms: int = 30
-    chart_current_points: int = 200
+    delay_update_ms: int = 1
+    delay_chart_update_ms: int = 1000
+    chart_power_points: int = 200
     chart_speed_points: int = 200
 
     wh_km_nsec_calc_interval: int = 15
@@ -20,10 +21,10 @@ class Config:
 
     write_logs: int = 0
 
-    motor_magnets: int = 30
-    wheel_diameter: int = 250
-    battery_cells: int = 14
-    battery_mah: int = 18200
+    motor_magnets: int = 0
+    wheel_diameter: int = 0
+    battery_cells: int = 0
+    battery_mah: int = 0
 
     serial_vesc_api: str = "http://127.0.0.1:2002"  # invisible in settings
     serial_port: str = "/dev/ttyUSB0"
@@ -41,19 +42,25 @@ class Config:
     right_param_active_ind: str = "SessionDistance" # invisible in settings
     left_param_active_ind: str = "BatteryPercent"   # invisible in settings
 
+    # this option no save as dict
+    invisible_in_settings_options = ['serial_vesc_api', 'gpio_enabled',
+                                     'gpio_break_signal_pin', 'gpio_1wire_bus_pin',
+                                     'odometer_distance_km_backup', 'left_param_active_ind',
+                                     'right_param_active_ind']
+
     @staticmethod
     def load():
-        if not os.path.isfile(utils.get_script_dir() + "/config.json") or os.path.getsize(utils.get_script_dir() + "/config.json") < 10:
+        if not os.path.isfile(utils.get_script_dir() + "/configs/config.json") or os.path.getsize(utils.get_script_dir() + "/configs/config.json") < 10:
             Config.save()
         else:
-            content = open(utils.get_script_dir() + "/config.json", "r").read()
+            content = open(utils.get_script_dir() + "/configs/config.json", "r").read()
             conf_dict: dict = json.loads(content)
             for i in conf_dict.keys():
                 setattr(Config, i, conf_dict[i])
 
     @staticmethod
     def save():
-        with open(utils.get_script_dir() + "/config.json", "w") as fp:
+        with open(utils.get_script_dir() + "/configs/config.json", "w") as fp:
             content = json.dumps(Config.get_as_dict(), indent=4)
             fp.write(content)
             os.fsync(fp)
@@ -63,7 +70,7 @@ class Config:
         conf_dict = {}
         for i in Config.__dict__.keys():
             i = str(i)
-            if i.startswith("__") or i == "load" or i == "save" or i == "get_as_dict":
+            if i.startswith("__") or i == "load" or i == "save" or i == "get_as_dict" or i == "invisible_in_settings_options":
                 continue
             conf_dict[i] = Config.__dict__[i]
         return conf_dict
@@ -79,10 +86,10 @@ class Odometer:
 
     @staticmethod
     def load():
-        if not os.path.isfile(utils.get_script_dir() + "/odometer.json") or os.path.getsize(utils.get_script_dir() + "/odometer.json") < 10:
+        if not os.path.isfile(utils.get_script_dir() + "/configs/odometer.json") or os.path.getsize(utils.get_script_dir() + "/configs/odometer.json") < 10:
             Odometer.save()
         else:
-            content = open(utils.get_script_dir() + "/odometer.json", "r").read()
+            content = open(utils.get_script_dir() + "/configs/odometer.json", "r").read()
             conf_dict: dict = json.loads(content)
             for i in conf_dict.keys():
                 setattr(Odometer, i, conf_dict[i])
@@ -90,7 +97,7 @@ class Odometer:
 
     @staticmethod
     def save():
-        with open(utils.get_script_dir() + "/odometer.json", "w") as fp:
+        with open(utils.get_script_dir() + "/configs/odometer.json", "w") as fp:
             content = json.dumps(Odometer.get_as_dict(), indent=4)
             fp.write(content)
             os.fsync(fp)

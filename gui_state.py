@@ -64,7 +64,7 @@ class ESCState:
 
 class GUIState:
     speed: float = 0.0
-    chart_current: list = []
+    chart_power: list = []
     chart_speed: list = []
 
     esc_a_state = ESCState("?")
@@ -76,12 +76,14 @@ class GUIState:
 
     wh_km: float = 0.0
     wh_km_Ns: float = 0.0
+    wh_km_h: float = 0.0
 
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
 
     average_speed: float = 0.0
     maximum_speed: float = 0.0
+    fet_temp: float = 0.0
 
     builded_ts_ms: int = 0
 

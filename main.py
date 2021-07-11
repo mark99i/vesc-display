@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtWidgets import QApplication
 import data_updater
 import gui
+import utils
 from config import Config
 
 log = None
@@ -15,6 +16,10 @@ if len(sys.argv) > 1:
     else:
         log = sys.argv[1]
 
+if not os.path.isdir(utils.get_script_dir(False) + "/configs"):
+    os.mkdir(utils.get_script_dir(False) + "/configs")
+if not os.path.isdir(utils.get_script_dir(False) + "/logs"):
+    os.mkdir(utils.get_script_dir(False) + "/logs")
 print("loading config ... ", end='')
 try:
     Config.load()

@@ -1,14 +1,13 @@
 import inspect
-import math
 import os
 import sys
 import subprocess
 import time
 from enum import Enum
-from threading import Thread
+from screeninfo import get_monitors
 
-from PyQt5.QtChart import QChart, QLineSeries, QLogValueAxis
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, Qt
+from PyQt5.QtChart import QChart, QLineSeries
+from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtGui import QPen, QColor
 
 class ButtonPos(Enum):
@@ -26,6 +25,12 @@ class ParamIndicators(Enum):
     WhKmH = 7
     AverageSpeed = 8
 
+class UtilsHolder:
+    chart_current_pen = None
+    chart_speed_pen = None
+
+    resolved_resolution = None
+
 def get_script_dir(follow_symlinks=True):
     if getattr(sys, 'frozen', False): # py2exe, PyInstaller, cx_Freeze
         path = os.path.abspath(sys.executable)
@@ -35,24 +40,19 @@ def get_script_dir(follow_symlinks=True):
         path = os.path.realpath(path)
     return os.path.dirname(path)
 
-chart_current_pen = None
-chart_speed_pen = None
-
 def setup_empty_chart(chart:QChart):
     series = QLineSeries()
     series.append(0, 0)
 
-    global chart_current_pen
-    chart_current_pen = QPen()
-    chart_current_pen.setColor(QColor(255, 255, 255, 255))
-    chart_current_pen.setWidth(4)
-    series.setPen(chart_current_pen)
+    UtilsHolder.chart_current_pen = QPen()
+    UtilsHolder.chart_current_pen.setColor(QColor(255, 255, 255, 255))
+    UtilsHolder.chart_current_pen.setWidth(4)
+    series.setPen(UtilsHolder.chart_current_pen)
 
-    global chart_speed_pen
-    chart_speed_pen = QPen()
-    chart_speed_pen.setColor(QColor(0, 200, 0, 255))
-    chart_speed_pen.setWidth(4)
-    series.setPen(chart_speed_pen)
+    UtilsHolder.chart_speed_pen = QPen()
+    UtilsHolder.chart_speed_pen.setColor(QColor(0, 200, 0, 255))
+    UtilsHolder.chart_speed_pen.setWidth(4)
+    series.setPen(UtilsHolder.chart_speed_pen)
 
     chart.removeAllSeries()
     chart.addSeries(series)
@@ -60,93 +60,22 @@ def setup_empty_chart(chart:QChart):
     chart.legend().hide()
     chart.setBackgroundVisible(False)
 
-def set_chart_series(chart: QChart, arr_current: list, arr_speed: list):
+def set_chart_series(chart: QChart, arr_power: list, arr_speed: list):
     chart.removeAllSeries()
 
-    global chart_current_pen, chart_speed_pen
-
-    if  len(arr_current) > 0:
-        series_current = QLineSeries()
-        for i in range(1, len(arr_current)):
-            series_current.append(i, arr_current[i - 1])
-        series_current.setPen(chart_current_pen)
-        chart.addSeries(series_current)
+    if  len(arr_power) > 0:
+        series_power = QLineSeries()
+        for i in range(1, len(arr_power)):
+            series_power.append(i, arr_power[i - 1])
+        series_power.setPen(UtilsHolder.chart_current_pen)
+        chart.addSeries(series_power)
 
     if len(arr_speed) > 0:
         series_speed = QLineSeries()
         for i in range(1, len(arr_speed)):
             series_speed.append(i, arr_speed[i-1])
-        series_speed.setPen(chart_speed_pen)
+        series_speed.setPen(UtilsHolder.chart_speed_pen)
         chart.addSeries(series_speed)
-
-class Battery:
-
-    MIN_CELL_VOLTAGE: float = 2.9
-    NOM_CELL_VOLTAGE: float = 3.7
-    MAX_CELL_VOLTAGE: float = 4.2
-
-    full_battery_wh: int = 0
-    display_start_voltage: float = 0
-    full_tracking_disabled: bool = False
-
-    last_percent: int = -100
-
-    @staticmethod
-    def init(now_voltage, now_distance):
-        from config import Config
-        if Config.battery_cells < 1 or Config.battery_mah < 500:
-            return
-        Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
-        Battery.display_start_voltage = now_voltage
-
-        if Battery.is_full_charged(now_voltage, now_distance):
-            Battery.full_tracking_disabled = False
-        else:
-            Battery.full_tracking_disabled = True
-
-    @staticmethod
-    def recalc_full_battery_wh() -> None:
-        from config import Config
-        Battery.full_battery_wh = int((Config.battery_cells * Battery.NOM_CELL_VOLTAGE * Config.battery_mah) / 1000)
-
-    @staticmethod
-    def is_full_charged(now_voltage: int, now_distance) -> bool:
-        from config import Config
-        max_battery_voltage = Config.battery_cells * Battery.MAX_CELL_VOLTAGE
-        min_voltage_for_full_charge = max_battery_voltage - (max_battery_voltage / 100 / 2) # max_voltage - 0.5%
-        full_battery = now_voltage >= min_voltage_for_full_charge
-
-        return full_battery and now_distance < 1.1
-
-    @staticmethod
-    def calculate_battery_percent(voltage: float, watt_hours: int) -> str:
-        if Battery.full_battery_wh == 0:
-            return "-"
-
-        if Battery.full_tracking_disabled:
-            from config import Config
-            percent_by_voltage = map_ard(voltage,
-                                         Battery.MIN_CELL_VOLTAGE * Config.battery_cells,
-                                         Battery.MAX_CELL_VOLTAGE * Config.battery_cells,
-                                         0, 100)
-
-            return f"{int(percent_by_voltage)}%"
-
-        estimated_wh = Battery.full_battery_wh - watt_hours
-        battery_percent = int(100 / (Battery.full_battery_wh / estimated_wh))
-
-        if Battery.last_percent == -100:
-            Battery.last_percent = battery_percent
-        else:
-            if abs(Battery.last_percent - battery_percent) > 3:
-                if Battery.last_percent < battery_percent:
-                    battery_percent = Battery.last_percent + 1
-                else:
-                    battery_percent = Battery.last_percent - 1
-            Battery.last_percent = battery_percent
-
-        battery_percent = stab(battery_percent, 0, 100)
-        return f"{battery_percent}%"
 
 class QTCommunication:
     # noinspection PyUnresolvedReferences
@@ -220,6 +149,32 @@ def distance_km_from_tachometer(tachometer: int) -> float:
     scale = (wheel_diameter * 3.1415926535) / (3.0 * Config.motor_magnets)
     distance_m = tachometer * scale
     return round(distance_m / 1000, 2)
+
+def get_skin_size_for_display() -> str:
+    if UtilsHolder.resolved_resolution is not None:
+        return UtilsHolder.resolved_resolution
+
+    all_skins = os.listdir(path=get_script_dir(False) + "/ui.layouts")
+    all_sizes = []
+    for skin_fn in all_skins:
+        size = skin_fn[skin_fn.rfind("_") + 1:-3]
+        if size not in all_sizes:
+            all_sizes.append(size)
+
+    monitor = get_monitors()
+    if len(monitor) < 1:
+        raise Exception("no monitors found")
+
+    monitor = monitor[0]
+    now_screen_size = f"{monitor.width}x{monitor.height}"
+
+    if now_screen_size in all_sizes:
+        UtilsHolder.resolved_resolution = now_screen_size
+    else:
+        UtilsHolder.resolved_resolution = "640x480" # defalut
+        print("WARNING: UNSUPPORTED SCREEN SIZE")
+
+    return UtilsHolder.resolved_resolution
 
 def map_ard(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min

@@ -4,13 +4,16 @@ import time
 from threading import Thread
 
 import network
-import utils
+from utils import distance_km_from_tachometer, stab
+from battery import Battery
 from config import Config, Odometer
 from gui_state import GUIState, ESCState
 from session_log import SessionLog
 
 
 class WorkerThread(Thread):
+    AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC = 30
+
     callback = None
     stopped_flag = False
     play_log_path = None
@@ -48,13 +51,12 @@ class WorkerThread(Thread):
 
             return self.calculated_value
 
-    class SpeedHolder:
+    class SessionHolder:
         speed_arr = []
-        last_update_ts_s: int = -1
-        update_interval: int = 60
 
         av: float = 0.0
         mx: float = 0.0
+        ft_max: float = 0.0
 
         def __init__(self):
             threading.Thread(target=self.update_thread_func, name="speed_updater_thread").start()
@@ -68,17 +70,17 @@ class WorkerThread(Thread):
                 else:
                     self.av = 0.00
                     self.mx = 0.00
-                try: time.sleep(self.update_interval)
+                try: time.sleep(WorkerThread.AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC)
                 except: return
 
-        def get_average_max(self):
-            return self.av, self.mx
+        def get_info(self):
+            return self.av, self.mx, self.ft_max
 
-        def append_speed(self, speed: float):
-            self.speed_arr.append(speed)
+        def append_ft_max(self, fet_temp: float):
+            self.ft_max = max(self.ft_max, fet_temp)
 
     wh_km_Ns_calc = WH_KM_Ns()
-    speed_calc = SpeedHolder()
+    session_holder = SessionHolder()
     state = GUIState()
     log = SessionLog()
 
@@ -88,9 +90,8 @@ class WorkerThread(Thread):
 
     def setup(self):
         Odometer.load()
-        self.log.init()
-        if Config.odometer_distance_km_backup > Odometer.full_odometer:
-            # restore from config
+        if Config.odometer_distance_km_backup != Odometer.full_odometer:
+            # restore backup from config
             Odometer.full_odometer = Config.odometer_distance_km_backup
             Odometer.save()
         else:
@@ -112,9 +113,9 @@ class WorkerThread(Thread):
 
     def run(self):
         state = self.state
-        state.chart_current = []
-        for i in range(0, Config.chart_current_points):
-            state.chart_current.append(0)
+        state.chart_power = []
+        for i in range(0, Config.chart_power_points):
+            state.chart_power.append(0)
         for i in range(0, Config.chart_speed_points):
             state.chart_speed.append(0)
 
@@ -131,6 +132,8 @@ class WorkerThread(Thread):
 
             if self.state.uart_status == GUIState.UART_STATUS_WORKING_ERROR or \
                     self.state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
+
+                # if set esc_b_id get info from -1 (local) and remote esc
                 if Config.esc_b_id >= 0:
                     result = network.Network.COMM_GET_VALUES_multi([-1, Config.esc_b_id])
                     if result is None:
@@ -144,6 +147,7 @@ class WorkerThread(Thread):
                     else:
                         state.esc_a_state.parse_from_json(result["-1"], "A")
                         state.esc_b_state.parse_from_json(result[str(Config.esc_b_id)], "B")
+                # if not set esc_b_id get info from -1 (local) only
                 else:
                     result = network.Network.COMM_GET_VALUES_multi([-1])
                     if result is None:
@@ -155,60 +159,75 @@ class WorkerThread(Thread):
                         state.esc_b_state = ESCState("?")
                 self.state.uart_status = GUIState.UART_STATUS_WORKING_SUCCESS
 
+                # if have info from esc_b
                 if state.esc_b_state.controller_a_b != "?":
                     voltage = (state.esc_a_state.voltage + state.esc_b_state.voltage) / 2
                     watt_hours_used = state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used
+                    fet_temp_max = max(state.esc_a_state.temperature, state.esc_b_state.temperature)
+                    state.full_power = state.esc_a_state.power + state.esc_b_state.power
                 else:
                     voltage = state.esc_a_state.voltage
                     watt_hours_used = state.esc_a_state.watt_hours_used
+                    fet_temp_max = state.esc_a_state.temperature
+                    state.full_power = state.esc_a_state.power
 
+                # calculate rpm only if Config.motor_magnets > 0
                 if Config.motor_magnets < 1:
                     rpm = 0
                 else:
                     rpm = state.esc_a_state.erpm / (Config.motor_magnets / 2)
-                speed = (Config.wheel_diameter / 10) * rpm * 0.001885
-                if speed > 99:
-                    speed = 0.0
-                state.speed = round(speed, 1)
+                state.speed = (Config.wheel_diameter / 10) * rpm * 0.001885
 
-                if speed > 0.5:
-                    self.speed_calc.append_speed(speed)
+                if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
 
-                state.average_speed, state.maximum_speed = self.speed_calc.get_average_max()
+                if state.speed > 0.5:
+                    self.session_holder.speed_arr.append(state.speed)
+                self.session_holder.append_ft_max(fet_temp_max)
 
-                state.full_power = state.esc_a_state.power + state.esc_b_state.power
+                state.average_speed, state.maximum_speed, state.fet_temp = self.session_holder.get_info()
 
-                while len(state.chart_current) > Config.chart_current_points:
-                    state.chart_current.pop(0)
-                if Config.chart_current_points > 0:
-                    state.chart_current.append(state.full_power)
+                # chart points remove last if more Config.chart_*_points and append new value
+                if Config.chart_power_points > 0:
+                    while len(state.chart_power) > Config.chart_power_points:
+                        state.chart_power.pop(0)
+                    state.chart_power.append(state.full_power)
 
-                while len(state.chart_speed) > Config.chart_speed_points:
-                    state.chart_speed.pop(0)
                 if Config.chart_speed_points > 0:
+                    while len(state.chart_speed) > Config.chart_speed_points:
+                        state.chart_speed.pop(0)
                     state.chart_speed.append(state.speed)
 
-                now_distance = utils.distance_km_from_tachometer(state.esc_a_state.tachometer)
+                # calculate distance from tachometer
+                # adding session to odometer and clear session distance if now_distance > Odometer.session
+                now_distance = distance_km_from_tachometer(state.esc_a_state.tachometer)
                 if now_distance < Odometer.session_mileage:
                     Odometer.full_odometer += Odometer.session_mileage
+                    Odometer.session_mileage = 0
                     Odometer.save()
                 Odometer.session_mileage = now_distance
                 state.session_distance = now_distance
 
-                if utils.Battery.display_start_voltage == 0:
-                    utils.Battery.init(voltage, now_distance)
+                # init battery calculation
+                if Battery.display_start_voltage == 0:
+                    Battery.init(voltage, now_distance)
 
-                state.battery_percent_str = utils.Battery.calculate_battery_percent(voltage, watt_hours_used)
+                state.battery_percent_str = Battery.calculate_battery_percent(voltage, watt_hours_used)
+
+                # calc indicators
                 if now_distance > 0:
                     state.wh_km = watt_hours_used / now_distance
-                if state.wh_km == 0:
-                    state.estimated_battery_distance = 0
+                if state.wh_km > 0 and not Battery.full_tracking_disabled:
+                    state.estimated_battery_distance = (Battery.full_battery_wh - watt_hours_used) / state.wh_km
                 else:
-                    state.estimated_battery_distance = (utils.Battery.full_battery_wh - watt_hours_used) / state.wh_km
+                    state.estimated_battery_distance = 0
                 state.wh_km_Ns = self.wh_km_Ns_calc.get_value(watt_hours_used, now_distance)
 
+                if state.speed > 0:
+                    state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
+
                 state.builded_ts_ms = int(time.time() * 1000)
-                self.log.write_state(json.dumps(state.get_json_for_log()))
+                if Config.write_logs:
+                    self.log.write_state(json.dumps(state.get_json_for_log()))
             else:
                 time.sleep(0.1)
 
@@ -251,7 +270,7 @@ class WorkerThread(Thread):
 
         self.callback(self.state)
 
-        wait_time_ms = utils.stab(wait_time_ms, 0, 300)
+        wait_time_ms = stab(wait_time_ms, 0, 300)
 
         self.index_log += 1
         time.sleep(wait_time_ms / 1000)

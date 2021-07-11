@@ -478,6 +478,9 @@ V:  99.9v
 L:  100%
 T:  99.9°С</string>
     </property>
+    <property name="overwriteMode">
+     <bool>true</bool>
+    </property>
     <property name="textInteractionFlags">
      <set>Qt::NoTextInteraction</set>
     </property>
@@ -565,6 +568,9 @@ V:  99.9v
 
 L:  100%
 T:  99.9°С</string>
+    </property>
+    <property name="overwriteMode">
+     <bool>true</bool>
     </property>
     <property name="textInteractionFlags">
      <set>Qt::NoTextInteraction</set>

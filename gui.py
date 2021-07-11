@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, 
     QTextEdit, QMenu, QAction
 
 import data_updater
-import utils
 from gui_session import GUISession
-from utils import ButtonPos, ParamIndicators
+from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
+    set_chart_series
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
@@ -67,13 +67,17 @@ class GUIApp:
     right_param_active_ind = ParamIndicators.SessionDistance
     left_param_active_ind = ParamIndicators.BatteryPercent
 
-    last_time = 0
-    reqs = 0
+    last_time_check_updates_in_sec = 0
+    calculation_updates_in_sec = 0
     updates_in_sec = 0
+
+    last_time_chart_update = 0
+
+    last_uart_status = ""
 
     def __init__(self):
         self.app = QApplication([])
-        self.ui = uic.loadUi(utils.get_script_dir(False) + "/main_window.ui")
+        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         self.settings = GUISettings()
@@ -82,19 +86,19 @@ class GUIApp:
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
-        close_icon.addPixmap(QPixmap(utils.get_script_dir(False) + "/close.png"), QIcon.Selected, QIcon.On)
+        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
         self.close_button.setIcon(close_icon)
         self.close_button.clicked.connect(self.on_click_close_app)
 
         self.settings_button = self.ui.settings_button
         settings_icon = QIcon()
-        settings_icon.addPixmap(QPixmap(utils.get_script_dir(False) + "/settings.png"), QIcon.Selected, QIcon.On)
+        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
         self.settings_button.setIcon(settings_icon)
         self.settings_button.clicked.connect(self.on_click_open_settings)
 
         self.chartView = self.ui.chart
         self.chart = self.chartView.chart()
-        utils.setup_empty_chart(self.chart)
+        setup_empty_chart(self.chart)
         self.chartView.setRenderHint(QPainter.Antialiasing, False)
 
         self.esc_a_element = self.ui.esc_a_desc
@@ -143,15 +147,14 @@ class GUIApp:
         self.service_status.show()
 
     def on_click_right_param(self, event: QMouseEvent):
-        #self.alt = not self.alt
-        # TODO: alt func menu
-        self.show_menu_param_change(event, utils.ButtonPos.RIGHT_PARAM)
+        self.show_menu_param_change(event, ButtonPos.RIGHT_PARAM)
         pass
 
     def on_click_left_param(self, event: QMouseEvent):
-        self.show_menu_param_change(event, utils.ButtonPos.LEFT_PARAM)
+        self.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
         pass
 
+    # noinspection PyUnusedLocal
     def on_click_center_param(self, event: QMouseEvent):
         self.session_info.show()
 
@@ -161,7 +164,7 @@ class GUIApp:
 
         actions = []
         if param_position == ButtonPos.LEFT_PARAM or param_position == ButtonPos.RIGHT_PARAM:
-            for indicator in [i for i in utils.ParamIndicators]:
+            for indicator in [i for i in ParamIndicators]:
                 name: str = indicator.name
                 if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
                     name = "✔ " + name
@@ -207,10 +210,6 @@ class GUIApp:
                     f'{state.esc_a_state.battery_current + state.esc_b_state.battery_current}A'
         self.main_power.setText(power_str)
 
-        wh_km_h = 0.0
-        if state.speed > 0:
-            wh_km_h = utils.stab(round((state.esc_a_state.power + state.esc_b_state.power) / state.speed, 1), -99.9, 99.9)
-
         self.main_speed_lcd.display(str(round(state.speed, 1)))
 
         all_params_values = dict()
@@ -221,7 +220,7 @@ class GUIApp:
         all_params_values[4] = str(round(state.wh_km, 1))
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
         all_params_values[6] = str(state.estimated_battery_distance)[:4]
-        all_params_values[7] = str(wh_km_h)
+        all_params_values[7] = str(state.wh_km_h)
         all_params_values[8] = str(round(state.average_speed, 1))
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
@@ -231,20 +230,25 @@ class GUIApp:
         self.date.setText(time.strftime("%d.%m.%y", lt))
         self.time.setText(time.strftime("%H:%M:%S", lt))
 
-        if   state.uart_status == GUIState.UART_STATUS_ERROR:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);border: none;") # red
-        elif state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 110, 0);border: none;") # green
-        elif state.uart_status == GUIState.UART_STATUS_WORKING_ERROR:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);border: none;")  # blue
-        elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:
-            self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);border: none;") # pink
+        if state.uart_status != self.last_uart_status:
+            if   state.uart_status == GUIState.UART_STATUS_ERROR:
+                self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 0);border: none;") # red
+            elif state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
+                self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(0, 110, 0);border: none;") # green
+            elif state.uart_status == GUIState.UART_STATUS_WORKING_ERROR:
+                self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(85, 0, 255);border: none;")  # blue
+            elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:
+                self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);border: none;") # pink
+            self.last_uart_status = state.uart_status
 
-        self.reqs += 1
-        if self.last_time < int(time.time()):
-            if Config.chart_current_points > 0 or Config.chart_current_points > 0:
-                utils.set_chart_series(self.chart, state.chart_current, state.chart_speed)
-            self.updates_in_sec = self.reqs
-            self.reqs = 0
-            self.last_time = int(time.time())
-        pass
+        now_time_ms = int(time.time() * 1000)
+        if now_time_ms - self.last_time_chart_update > Config.delay_chart_update_ms:
+            if Config.chart_power_points > 0 or Config.chart_speed_points > 0:
+                set_chart_series(self.chart, state.chart_power, state.chart_speed)
+            self.last_time_chart_update = now_time_ms
+
+        self.calculation_updates_in_sec += 1
+        if now_time_ms - self.last_time_check_updates_in_sec > 1000:
+            self.updates_in_sec = self.calculation_updates_in_sec
+            self.calculation_updates_in_sec = 0
+            self.last_time_check_updates_in_sec = now_time_ms
