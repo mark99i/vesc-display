@@ -203,6 +203,8 @@ class WorkerThread(Thread):
                 if now_distance < Odometer.session_mileage:
                     Odometer.full_odometer += Odometer.session_mileage
                     Odometer.session_mileage = 0
+                    Config.odometer_distance_km_backup = Odometer.full_odometer
+                    Config.save()
                     Odometer.save()
                 Odometer.session_mileage = now_distance
                 state.session_distance = now_distance
