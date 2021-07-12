@@ -12,8 +12,6 @@ from session_log import SessionLog
 
 
 class WorkerThread(Thread):
-    AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC = 30
-
     callback = None
     stopped_flag = False
     play_log_path = None
@@ -52,6 +50,8 @@ class WorkerThread(Thread):
             return self.calculated_value
 
     class SessionHolder:
+        AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC = 5
+
         speed_arr = []
 
         av: float = 0.0
@@ -70,8 +70,8 @@ class WorkerThread(Thread):
                 else:
                     self.av = 0.00
                     self.mx = 0.00
-                try: time.sleep(WorkerThread.AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC)
-                except: return
+                try: time.sleep(self.AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC)
+                except: pass
 
         def get_info(self):
             return self.av, self.mx, self.ft_max
