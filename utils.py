@@ -7,12 +7,14 @@ from enum import Enum
 from screeninfo import get_monitors
 
 from PyQt5.QtChart import QChart, QLineSeries
-from PyQt5.QtCore import pyqtSignal, QThread
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, pyqtSlot
 from PyQt5.QtGui import QPen, QColor
+
 
 class ButtonPos(Enum):
     RIGHT_PARAM = "right_param"
     LEFT_PARAM = "left_param"
+    CENTER_PARAM = "center_param"
 
 class ParamIndicators(Enum):
     BatteryPercent = 0
@@ -24,6 +26,7 @@ class ParamIndicators(Enum):
     BatteryEstDistance = 6
     WhKmH = 7
     AverageSpeed = 8
+    FullPower = 9
 
 class UtilsHolder:
     chart_current_pen = None
@@ -181,3 +184,21 @@ def map_ard(x, in_min, in_max, out_min, out_max):
 
 def stab(x, in_min, in_max):
     return max(min(in_max, x), in_min)
+
+# noinspection PyUnresolvedReferences
+class GUIAppComm(QObject):
+    closeApp = pyqtSignal(object)
+
+    callback = None
+
+    def push_data(self, state):
+        self.closeApp.emit(state)
+
+    def setCallback(self, callback):
+        self.callback = callback
+        self.closeApp.connect(self.on_update)
+
+    @pyqtSlot(object)
+    def on_update(self, state):
+        if self.callback is not None:
+            self.callback(state)

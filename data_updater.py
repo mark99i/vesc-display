@@ -213,7 +213,7 @@ class WorkerThread(Thread):
                 if Battery.display_start_voltage == 0:
                     Battery.init(voltage, now_distance)
 
-                state.battery_percent_str = Battery.calculate_battery_percent(voltage, watt_hours_used)
+                state.battery_percent = Battery.calculate_battery_percent(voltage, watt_hours_used)
 
                 # calc indicators
                 if now_distance > 0:

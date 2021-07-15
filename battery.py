@@ -41,9 +41,9 @@ class Battery:
         return full_battery and now_distance < 1.1
 
     @staticmethod
-    def calculate_battery_percent(voltage: float, watt_hours: int) -> str:
+    def calculate_battery_percent(voltage: float, watt_hours: int) -> int:
         if Battery.full_battery_wh == 0:
-            return "-"
+            return 0
 
         if Battery.full_tracking_disabled:
             from config import Config
@@ -52,7 +52,7 @@ class Battery:
                                          Battery.MAX_CELL_VOLTAGE * Config.battery_cells,
                                          0, 100)
 
-            return f"{int(percent_by_voltage)}%"
+            return percent_by_voltage
 
         estimated_wh = Battery.full_battery_wh - watt_hours
         battery_percent = int(100 / (Battery.full_battery_wh / estimated_wh))
@@ -68,4 +68,4 @@ class Battery:
             Battery.last_percent = battery_percent
 
         battery_percent = stab(battery_percent, 0, 100)
-        return f"{battery_percent}%"
+        return battery_percent

@@ -3,8 +3,9 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 import data_updater
-import gui
-import utils
+from gui import GUIApp as GUIApp
+from gui_lite import GUIApp as GUIAppLite
+from utils import GUIAppComm, get_script_dir
 from config import Config
 
 log = None
@@ -16,10 +17,10 @@ if len(sys.argv) > 1:
     else:
         log = sys.argv[1]
 
-if not os.path.isdir(utils.get_script_dir(False) + "/configs"):
-    os.mkdir(utils.get_script_dir(False) + "/configs")
-if not os.path.isdir(utils.get_script_dir(False) + "/logs"):
-    os.mkdir(utils.get_script_dir(False) + "/logs")
+if not os.path.isdir(get_script_dir(False) + "/configs"):
+    os.mkdir(get_script_dir(False) + "/configs")
+if not os.path.isdir(get_script_dir(False) + "/logs"):
+    os.mkdir(get_script_dir(False) + "/logs")
 print("loading config ... ", end='')
 try:
     Config.load()
@@ -30,11 +31,10 @@ except:
     exit(1)
 
 app = QApplication([])
-ui = gui.GUIApp()
+ui = GUIAppLite()
 
-comm = gui.Communicate()
+comm = GUIAppComm()
 comm.setCallback(ui.callback_update_gui)
-
 thread = data_updater.WorkerThread(comm.push_data)
 thread.name = "data_updater"
 thread.play_log_path = log

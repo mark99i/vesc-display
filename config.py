@@ -14,7 +14,7 @@ class Config:
 
     wh_km_nsec_calc_interval: int = 15
 
-    hw_controller_current_limit: int = 135
+    use_gui_lite: int = 0
 
     switch_a_b_esc: int = 0
     esc_b_id: int = -1
@@ -25,6 +25,7 @@ class Config:
     wheel_diameter: int = 0
     battery_cells: int = 0
     battery_mah: int = 0
+    hw_controller_current_limit: int = 135
 
     serial_vesc_api: str = "http://127.0.0.1:2002"  # invisible in settings
     serial_port: str = "/dev/ttyUSB0"
@@ -40,13 +41,14 @@ class Config:
     odometer_distance_km_backup: float = 0          # invisible in settings
 
     right_param_active_ind: str = "SessionDistance" # invisible in settings
+    center_param_active_ind: str = "WhKm"           # invisible in settings
     left_param_active_ind: str = "BatteryPercent"   # invisible in settings
 
     # this option no save as dict
     invisible_in_settings_options = ['serial_vesc_api', 'gpio_enabled',
                                      'gpio_break_signal_pin', 'gpio_1wire_bus_pin',
                                      'odometer_distance_km_backup', 'left_param_active_ind',
-                                     'right_param_active_ind']
+                                     'right_param_active_ind', 'center_param_active_ind']
 
     @staticmethod
     def load():
