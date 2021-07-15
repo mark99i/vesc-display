@@ -2,12 +2,12 @@
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
-from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QScroller
+from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QListView, QDialog, QScroller, QApplication
 
 import network
 from battery import Battery
 from config import Config, Odometer
-from utils import get_script_dir, get_skin_size_for_display, QTCommunication
+from utils import get_script_dir, get_skin_size_for_display, QTCommunication, UtilsHolder
 
 
 class GUISettingsIntMod(QDialog):
@@ -211,12 +211,14 @@ class GUISettings:
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
         self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
-        self.list_model.appendRow(self.get_list_item(f"modify odometer [{Config.odometer_distance_km_backup}]", disabled=True))
+        self.list_model.appendRow(self.get_list_item(f"modify odometer [{round(Config.odometer_distance_km_backup, 2)}]", disabled=True))
         self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
         conf = Config.get_as_dict()
         for name in conf.keys():
             if name in Config.invisible_in_settings_options: continue
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
+        self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
+        self.list_model.appendRow(self.get_list_item("restart application"))
 
     def open_int_mod(self, parameter, step, val_min, val_max):
         self.opened_change_val = True
@@ -252,6 +254,8 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, -1, 240)
         elif parameter_name == "write_logs":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "use_gui_lite":
+            self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":
@@ -274,6 +278,9 @@ class GUISettings:
             self.open_get_battery_motor_from_vesc()
         elif parameter_name.startswith("modify odometer "):
             self.open_int_mod("_odometer", 50, 0, 100000)
+        elif parameter_name == "restart application":
+            UtilsHolder.need_restart_app = True
+            QApplication.exit(0)
 
     def show(self):
         self.reload_list()

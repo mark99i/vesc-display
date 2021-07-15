@@ -52,7 +52,7 @@ class Battery:
                                          Battery.MAX_CELL_VOLTAGE * Config.battery_cells,
                                          0, 100)
 
-            return percent_by_voltage
+            return int(percent_by_voltage)
 
         estimated_wh = Battery.full_battery_wh - watt_hours
         battery_percent = int(100 / (Battery.full_battery_wh / estimated_wh))
@@ -68,4 +68,4 @@ class Battery:
             Battery.last_percent = battery_percent
 
         battery_percent = stab(battery_percent, 0, 100)
-        return battery_percent
+        return int(battery_percent)

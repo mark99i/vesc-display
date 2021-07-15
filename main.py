@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication
 import data_updater
 from gui import GUIApp as GUIApp
 from gui_lite import GUIApp as GUIAppLite
-from utils import GUIAppComm, get_script_dir
+from utils import GUIAppComm, get_script_dir, UtilsHolder
 from config import Config
 
 log = None
@@ -30,18 +30,34 @@ except:
     input()
     exit(1)
 
-app = QApplication([])
-ui = GUIAppLite()
+w_thread = None
+while True:
+    UtilsHolder.need_restart_app = False
 
-comm = GUIAppComm()
-comm.setCallback(ui.callback_update_gui)
-thread = data_updater.WorkerThread(comm.push_data)
-thread.name = "data_updater"
-thread.play_log_path = log
-thread.start()
-ui.data_updater_thread = thread
-ui.show()
-thread.stopped_flag = True
+    app = QApplication([])
+
+    if Config.use_gui_lite:
+        ui = GUIAppLite()
+    else:
+        ui = GUIApp()
+
+    comm = GUIAppComm()
+    comm.setCallback(ui.callback_update_gui)
+    if w_thread is None:
+        w_thread = data_updater.WorkerThread()
+        w_thread.callback = comm.push_data
+        w_thread.name = "data_updater"
+        w_thread.play_log_path = log
+        w_thread.start()
+    w_thread.callback = comm.push_data
+    ui.data_updater_thread = w_thread
+    ui.show()
+    w_thread.callback = None
+
+    if not UtilsHolder.need_restart_app:
+        break
+
+w_thread.stopped_flag = True
 
 app.exit(0)
 exit(0)

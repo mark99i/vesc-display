@@ -61,17 +61,17 @@ class GUIApp:
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
 
-        #self.close_button = self.ui.close_button
-        #close_icon = QIcon()
-        #close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
-        #self.close_button.setIcon(close_icon)
-        #self.close_button.clicked.connect(self.on_click_close_app)
+        self.close_button = self.ui.close_button
+        close_icon = QIcon()
+        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
+        self.close_button.setIcon(close_icon)
+        self.close_button.clicked.connect(self.on_click_close_app)
 
-        #self.settings_button = self.ui.settings_button
-        #settings_icon = QIcon()
-        #settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
-        #self.settings_button.setIcon(settings_icon)
-        #self.settings_button.clicked.connect(self.on_click_open_settings)
+        self.settings_button = self.ui.settings_button
+        settings_icon = QIcon()
+        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
+        self.settings_button.setIcon(settings_icon)
+        self.settings_button.clicked.connect(self.on_click_open_settings)
 
         self.main_speed_lcd = self.ui.main_speed
         self.left_param = self.ui.left_param

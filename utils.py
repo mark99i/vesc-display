@@ -34,6 +34,8 @@ class UtilsHolder:
 
     resolved_resolution = None
 
+    need_restart_app = False
+
 def get_script_dir(follow_symlinks=True):
     if getattr(sys, 'frozen', False): # py2exe, PyInstaller, cx_Freeze
         path = os.path.abspath(sys.executable)
@@ -192,7 +194,8 @@ class GUIAppComm(QObject):
     callback = None
 
     def push_data(self, state):
-        self.closeApp.emit(state)
+        try: self.closeApp.emit(state)
+        except: pass
 
     def setCallback(self, callback):
         self.callback = callback
