@@ -12,7 +12,7 @@ from utils import *
 
 
 class GUISession:
-    AUTOUPDATE_INTERVAL_SEC = 5
+    AUTOUPDATE_INTERVAL_SEC: int = 5
 
     ui: QDialog = None
     parent = None
@@ -45,16 +45,17 @@ class GUISession:
         data_updater_thread = self.parent.data_updater_thread
         state = data_updater_thread.state
         watt_h_used = int(state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used)
+        av, mx, tf = data_updater_thread.session_holder.get_info()
 
         text = f"""
 session distance: {Odometer.session_mileage} km
-session average speed: {state.average_speed} km/h
-session maximum speed: {state.maximum_speed} km/h
+session average speed: {av} km/h
+session maximum speed: {mx} km/h
 
-watt hours used {watt_h_used} from {Battery.full_battery_wh}, est ~{Battery.full_battery_wh - watt_h_used} wh 
+watt hours used {watt_h_used} from {Battery.full_battery_wh}, est ~{Battery.full_battery_wh - watt_h_used} 
 watt hours/km: {round(state.wh_km, 2)} wh/km
 
-session maximum fet temp: {data_updater_thread.session_holder.ft_max} °С
+session maximum fet temp: {tf} °С
 
 ---
 odometer: {round(Odometer.full_odometer, 2)} km
@@ -63,10 +64,10 @@ odometer: {round(Odometer.full_odometer, 2)} km
         self.le_stats.setPlainText(text[1:-1])
         self.update_battery_tracking_state()
 
-        if self.ui.isActiveWindow():
+        if self.ui.isActiveWindow() or self.ui.isVisible():
             # threading.Timer not working because him execute function not in UI thread
             QTCommunication.run_func_in_background(self.ui,
-                                                   need_run=lambda: time.sleep(GUISession.AUTOUPDATE_INTERVAL_SEC),
+                                                   need_run=lambda: time.sleep(self.AUTOUPDATE_INTERVAL_SEC),
                                                    callback=self.update_text_stats)
         pass
 
