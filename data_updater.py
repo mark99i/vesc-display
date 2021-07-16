@@ -50,33 +50,23 @@ class WorkerThread(Thread):
             return self.calculated_value
 
     class SessionHolder:
-        AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC = 5
-
-        speed_arr = []
+        speed_sum = 0
+        speed_count = 0
 
         av: float = 0.0
         mx: float = 0.0
         ft_max: float = 0.0
 
-        def __init__(self):
-            threading.Thread(target=self.update_thread_func, name="speed_updater_thread").start()
-            pass
-
-        def update_thread_func(self):
-            while True:
-                if len(self.speed_arr) > 0:
-                    self.av = round(sum(self.speed_arr) / len(self.speed_arr), 2)
-                    self.mx = round(max(self.speed_arr), 2)
-                else:
-                    self.av = 0.00
-                    self.mx = 0.00
-                try: time.sleep(self.AVERAGE_MAX_SPEED_UPDATE_INTERVAL_SEC)
-                except: pass
-
         def get_info(self):
             return self.av, self.mx, self.ft_max
 
-        def append_ft_max(self, fet_temp: float):
+        def append_info(self, fet_temp: float, now_speed: float):
+            if now_speed > 0.5:
+                self.speed_sum += now_speed
+                self.speed_count += 1
+                self.av = round(self.speed_sum / self.speed_count, 2)
+                self.mx = max(self.mx, now_speed)
+
             self.ft_max = max(self.ft_max, fet_temp)
 
     wh_km_Ns_calc = WH_KM_Ns()
@@ -84,9 +74,8 @@ class WorkerThread(Thread):
     state = GUIState()
     log = SessionLog()
 
-    def __init__(self, callback):
+    def __init__(self):
         Thread.__init__(self)
-        self.callback = callback
 
     def setup(self):
         Odometer.load()
@@ -180,9 +169,7 @@ class WorkerThread(Thread):
 
                 if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
 
-                if state.speed > 0.5:
-                    self.session_holder.speed_arr.append(state.speed)
-                self.session_holder.append_ft_max(fet_temp_max)
+                self.session_holder.append_info(fet_temp_max, state.speed)
 
                 state.average_speed, state.maximum_speed, state.fet_temp = self.session_holder.get_info()
 
@@ -213,7 +200,7 @@ class WorkerThread(Thread):
                 if Battery.display_start_voltage == 0:
                     Battery.init(voltage, now_distance)
 
-                state.battery_percent_str = Battery.calculate_battery_percent(voltage, watt_hours_used)
+                state.battery_percent = Battery.calculate_battery_percent(voltage, watt_hours_used)
 
                 # calc indicators
                 if now_distance > 0:
@@ -233,7 +220,10 @@ class WorkerThread(Thread):
             else:
                 time.sleep(0.1)
 
-            self.callback(state)
+            if self.callback is not None:
+                self.callback(state)
+            else:
+                time.sleep(0.5)
 
             time.sleep(float(Config.delay_update_ms) / 1000.0)
 

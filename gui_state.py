@@ -72,7 +72,7 @@ class GUIState:
 
     full_power: int = 0
 
-    battery_percent_str: str = None
+    battery_percent: int = 0
 
     wh_km: float = 0.0
     wh_km_Ns: float = 0.0
