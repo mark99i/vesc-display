@@ -1,9 +1,9 @@
 import json
-import threading
 import time
 from threading import Thread
 
 import network
+from nsec_calculation import NSec
 from utils import distance_km_from_tachometer, stab
 from battery import Battery
 from config import Config, Odometer
@@ -19,36 +19,6 @@ class WorkerThread(Thread):
     play_log_state_arr = None
     play_log_time_offset = None
 
-    class WH_KM_Ns:
-        last_update_ts_s: int = -1
-        calculated_value: float = 0.0
-        watts: float = 0.0
-        distance: float = -1
-
-        def get_value(self, watts_used: float, now_distance: float) -> float:
-            if Config.wh_km_nsec_calc_interval == -1: return 0.0
-
-            now_time_s = int(time.time())
-
-            if self.distance == -1:
-                self.distance = now_distance
-                self.watts = watts_used
-                self.last_update_ts_s = now_time_s
-                return self.calculated_value
-
-            if now_time_s - self.last_update_ts_s > Config.wh_km_nsec_calc_interval:
-                watt_used_in_n_sec = watts_used - self.watts
-                distance_in_n_sec = now_distance - self.distance
-                if distance_in_n_sec > 0:
-                    self.calculated_value = watt_used_in_n_sec / distance_in_n_sec
-                else:
-                    self.calculated_value = 0.0
-                self.distance = now_distance
-                self.watts = watts_used
-                self.last_update_ts_s = now_time_s
-
-            return self.calculated_value
-
     class SessionHolder:
         speed_sum = 0
         speed_count = 0
@@ -61,7 +31,7 @@ class WorkerThread(Thread):
             return self.av, self.mx, self.ft_max
 
         def append_info(self, fet_temp: float, now_speed: float):
-            if now_speed > 0.5:
+            if now_speed > 2:
                 self.speed_sum += now_speed
                 self.speed_count += 1
                 self.av = round(self.speed_sum / self.speed_count, 2)
@@ -69,7 +39,7 @@ class WorkerThread(Thread):
 
             self.ft_max = max(self.ft_max, fet_temp)
 
-    wh_km_Ns_calc = WH_KM_Ns()
+    nsec_calc = NSec()
     session_holder = SessionHolder()
     state = GUIState()
     log = SessionLog()
@@ -209,7 +179,7 @@ class WorkerThread(Thread):
                     state.estimated_battery_distance = (Battery.full_battery_wh - watt_hours_used) / state.wh_km
                 else:
                     state.estimated_battery_distance = 0
-                state.wh_km_Ns = self.wh_km_Ns_calc.get_value(watt_hours_used, now_distance)
+                state.wh_km_Ns = self.nsec_calc.get_value(state).watts_on_km
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
@@ -262,7 +232,7 @@ class WorkerThread(Thread):
 
         self.callback(self.state)
 
-        wait_time_ms = stab(wait_time_ms, 0, 300)
+        wait_time_ms = stab(wait_time_ms, 0, 300) - 5 # TODO: refactor from time.sleep to time.time() offsets
 
         self.index_log += 1
         time.sleep(wait_time_ms / 1000)
