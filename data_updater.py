@@ -65,7 +65,7 @@ class WorkerThread(Thread):
                 self.speed_sum += now_speed
                 self.speed_count += 1
                 self.av = round(self.speed_sum / self.speed_count, 2)
-                self.mx = max(self.mx, now_speed)
+                self.mx = round(max(self.mx, now_speed), 2)
 
             self.ft_max = max(self.ft_max, fet_temp)
 
