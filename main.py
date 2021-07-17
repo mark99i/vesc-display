@@ -11,8 +11,7 @@ from config import Config
 log = None
 if len(sys.argv) > 1:
     if not os.path.isfile(sys.argv[1]):
-        print("argv[1] not file, launching in normal mode")
-        input()
+        print("argv[1] not file, exiting")
         exit(1)
     else:
         log = sys.argv[1]
@@ -21,6 +20,7 @@ if not os.path.isdir(get_script_dir(False) + "/configs"):
     os.mkdir(get_script_dir(False) + "/configs")
 if not os.path.isdir(get_script_dir(False) + "/logs"):
     os.mkdir(get_script_dir(False) + "/logs")
+
 print("loading config ... ", end='')
 try:
     Config.load()
