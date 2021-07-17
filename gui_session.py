@@ -48,9 +48,9 @@ class GUISession:
         av, mx, tf = data_updater_thread.session_holder.get_info()
 
         text = f"""
-session distance: {Odometer.session_mileage} km
-session average speed: {av} km/h
-session maximum speed: {mx} km/h
+session distance: {round(Odometer.session_mileage, 2)} km
+session average speed: {round(av, 2)} km/h
+session maximum speed: {round(mx, 2)} km/h
 
 watt hours used {watt_h_used} from {Battery.full_battery_wh}, est ~{Battery.full_battery_wh - watt_h_used} 
 watt hours/km: {round(state.wh_km, 2)} wh/km

@@ -195,8 +195,8 @@ class GUIApp:
 
         all_params_values = dict()
         all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(state.session_distance)[:4]
-        all_params_values[2] = str(int(Odometer.full_odometer))
+        all_params_values[1] = str(round(state.session_distance, 2))[:4]
+        all_params_values[2] = str(round(int(Odometer.full_odometer), 1))
         all_params_values[3] = str(self.updates_in_sec)
         all_params_values[4] = str(round(state.wh_km, 1))
         all_params_values[5] = str(round(state.wh_km_Ns, 1))

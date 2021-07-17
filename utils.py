@@ -153,7 +153,7 @@ def distance_km_from_tachometer(tachometer: int) -> float:
     if Config.motor_magnets < 1: return 0
     scale = (wheel_diameter * 3.1415926535) / (3.0 * Config.motor_magnets)
     distance_m = tachometer * scale
-    return round(distance_m / 1000, 2)
+    return round(distance_m / 1000, 6)
 
 def get_skin_size_for_display() -> str:
     if UtilsHolder.resolved_resolution is not None:
