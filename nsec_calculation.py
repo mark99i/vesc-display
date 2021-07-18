@@ -1,3 +1,6 @@
+import json
+import copy
+
 from config import Config
 from gui_state import GUIState
 
@@ -25,7 +28,7 @@ class NSec:
         if nstate.speed < 2 or Config.nsec_calc_count < 1:
             return self.last_result
 
-        self.states_arr.append(nstate)
+        self.states_arr.append(copy.deepcopy(nstate))
 
         if len(self.states_arr) > Config.nsec_calc_count:  # если состояний слишком много удалить лишнее
             removed_state: GUIState = self.states_arr.pop(0)
@@ -40,10 +43,10 @@ class NSec:
         result.distance = nstate.session_distance - removed_state.session_distance
         result.watts_used = full_wattes_used_now - full_wattes_used_removed
 
-        result.min_voltage = min(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage
-        result.max_voltage = max(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage
-        result.max_speed = max(self.states_arr, key=lambda state: state.speed).esc_a_state.speed
-        result.min_speed = min(self.states_arr, key=lambda state: state.speed).esc_a_state.speed
+        result.min_voltage = round(min(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage, 1)
+        result.max_voltage = round(max(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage, 1)
+        result.max_speed = round(max(self.states_arr, key=lambda state: state.speed).speed, 2)
+        result.min_speed = round(min(self.states_arr, key=lambda state: state.speed).speed, 2)
 
         # получаем state, в котором сумма battery_current наименьшая
         t_state: GUIState = min(self.states_arr, key=lambda state: (
@@ -81,7 +84,7 @@ class NSec:
 
         if result.distance > 0:
             result.watts_on_km = result.watts_used / result.distance
-        result.max_diff_voltage = result.max_voltage - result.min_voltage
+        result.max_diff_voltage = round(result.max_voltage - result.min_voltage, 1)
 
         self.last_result = result
         return result

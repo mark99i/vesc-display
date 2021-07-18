@@ -37,7 +37,7 @@ class ESCState:
 
         self.temperature = json["temp_fet_filtered"]
         self.erpm = json["rpm"]
-        self.tachometer = json["tachometer"]
+        self.tachometer = json["tachometer_abs"]
         if self.erpm < 0:
             self.erpm *= -1
 
