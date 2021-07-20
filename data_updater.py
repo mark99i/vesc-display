@@ -99,7 +99,7 @@ class WorkerThread(Thread):
                     self.state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
 
                 if self.speed_logic_mode_enabled:
-                    self.speed_logic_get_state(state)
+                    self.speed_logic_get_mininal_state(state)
                     continue
 
                 # if set esc_b_id get info from -1 (local) and remote esc
