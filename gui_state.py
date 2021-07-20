@@ -86,7 +86,9 @@ class GUIState:
 
     average_speed: float = 0.0
     maximum_speed: float = 0.0
-    fet_temp: float = 0.0
+    maximum_power: float = 0.0
+    minimum_power: float = 0.0
+    maximum_fet_temp: float = 0.0
 
     builded_ts_ms: int = 0
 

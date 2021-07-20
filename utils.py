@@ -6,7 +6,7 @@ import time
 from enum import Enum
 from screeninfo import get_monitors
 
-from PyQt5.QtChart import QChart, QLineSeries
+from PyQt5.QtChart import QChart, QLineSeries, QValueAxis
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, pyqtSlot
 from PyQt5.QtGui import QPen, QColor
 
@@ -29,8 +29,10 @@ class ParamIndicators(Enum):
     FullPower = 9
 
 class UtilsHolder:
-    chart_current_pen = None
+    chart_power_pen = None
     chart_speed_pen = None
+    chart_power_axis_y = None
+    chart_speed_axis_y = None
 
     resolved_resolution = None
 
@@ -49,31 +51,50 @@ def setup_empty_chart(chart:QChart):
     series = QLineSeries()
     series.append(0, 0)
 
-    UtilsHolder.chart_current_pen = QPen()
-    UtilsHolder.chart_current_pen.setColor(QColor(255, 255, 255, 255))
-    UtilsHolder.chart_current_pen.setWidth(4)
-    series.setPen(UtilsHolder.chart_current_pen)
+    UtilsHolder.chart_power_pen = QPen()
+    UtilsHolder.chart_power_pen.setColor(QColor(255, 255, 255, 255))
+    UtilsHolder.chart_power_pen.setWidth(4)
+    series.setPen(UtilsHolder.chart_power_pen)
 
     UtilsHolder.chart_speed_pen = QPen()
     UtilsHolder.chart_speed_pen.setColor(QColor(0, 200, 0, 255))
     UtilsHolder.chart_speed_pen.setWidth(4)
     series.setPen(UtilsHolder.chart_speed_pen)
 
+    UtilsHolder.chart_power_axis_y = QValueAxis()
+    UtilsHolder.chart_power_axis_y.setVisible(False)
+
+    UtilsHolder.chart_speed_axis_y = QValueAxis()
+    UtilsHolder.chart_speed_axis_y.setVisible(False)
+
     chart.removeAllSeries()
     chart.addSeries(series)
-    # chart.createDefaultAxes()
     chart.legend().hide()
     chart.setBackgroundVisible(False)
 
-def set_chart_series(chart: QChart, arr_power: list, arr_speed: list):
-    chart.removeAllSeries()
+def set_chart_series(chart: QChart, state):
+    # определение типа структуры чтоб ide понимала что это
+    # from gui_state import GUIState
+    # state: GUIState = state
 
+    arr_power = state.chart_power
+    arr_speed = state.chart_speed
+
+    chart_speed_max = max(max(arr_speed), with_percent(state.maximum_speed, -10)) # верх скорости
+    chart_power_min = min(min(arr_power), with_percent(state.minimum_power, -60)) # низ мощности
+    chart_power_max = max(max(arr_power), with_percent(state.maximum_power, -10)) # верх мощности
+
+    UtilsHolder.chart_speed_axis_y.setRange(0, chart_speed_max)
+    UtilsHolder.chart_power_axis_y.setRange(chart_power_min, chart_power_max)
+
+    chart.removeAllSeries()
     if  len(arr_power) > 0:
         series_power = QLineSeries()
         for i in range(1, len(arr_power)):
             series_power.append(i, arr_power[i - 1])
-        series_power.setPen(UtilsHolder.chart_current_pen)
+        series_power.setPen(UtilsHolder.chart_power_pen)
         chart.addSeries(series_power)
+        chart.setAxisY(UtilsHolder.chart_power_axis_y, series_power)
 
     if len(arr_speed) > 0:
         series_speed = QLineSeries()
@@ -81,6 +102,10 @@ def set_chart_series(chart: QChart, arr_power: list, arr_speed: list):
             series_speed.append(i, arr_speed[i-1])
         series_speed.setPen(UtilsHolder.chart_speed_pen)
         chart.addSeries(series_speed)
+        chart.setAxisY(UtilsHolder.chart_speed_axis_y, series_speed)
+
+def with_percent(num, percent: int):
+    return (num + (num / 100 * percent)) if percent > 0 else (num - (num / 100 * abs(percent)))
 
 class QTCommunication:
     # noinspection PyUnresolvedReferences

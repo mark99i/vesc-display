@@ -227,7 +227,7 @@ class GUIApp:
 
         if now_time_ms - self.last_time_chart_update > Config.delay_chart_update_ms:
             if Config.chart_power_points > 0 or Config.chart_speed_points > 0:
-                set_chart_series(self.chart, state.chart_power, state.chart_speed)
+                set_chart_series(self.chart, state)
             self.last_time_chart_update = now_time_ms
 
         self.calculation_updates_in_sec += 1

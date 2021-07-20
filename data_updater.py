@@ -25,19 +25,23 @@ class WorkerThread(Thread):
 
         av: float = 0.0
         mx: float = 0.0
+        min_p: float = 0.0
+        max_p: float = 0.0
         ft_max: float = 0.0
 
         def get_info(self):
-            return self.av, self.mx, self.ft_max
+            return self.av, self.mx, self.ft_max, self.min_p, self.max_p
 
-        def append_info(self, fet_temp: float, now_speed: float):
+        def append_info(self, now_fet_temp: float, now_speed: float, now_power: float):
             if now_speed > 2:
                 self.speed_sum += now_speed
                 self.speed_count += 1
                 self.av = round(self.speed_sum / self.speed_count, 2)
                 self.mx = round(max(self.mx, now_speed), 2)
 
-            self.ft_max = max(self.ft_max, fet_temp)
+            self.ft_max = max(self.ft_max, now_fet_temp)
+            self.min_p = min(self.min_p, now_power)
+            self.max_p = max(self.max_p, now_power)
 
     nsec_calc = NSec()
     session_holder = SessionHolder()
@@ -139,9 +143,10 @@ class WorkerThread(Thread):
 
                 if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
 
-                self.session_holder.append_info(fet_temp_max, state.speed)
+                self.session_holder.append_info(fet_temp_max, state.speed, state.full_power)
 
-                state.average_speed, state.maximum_speed, state.fet_temp = self.session_holder.get_info()
+                # TODO: refactor: insert session struct to state
+                state.average_speed, state.maximum_speed, state.maximum_fet_temp, state.minimum_power, state.maximum_power = self.session_holder.get_info()
 
                 # chart points remove last if more Config.chart_*_points and append new value
                 if Config.chart_power_points > 0:

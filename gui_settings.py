@@ -243,7 +243,7 @@ class GUISettings:
         if   parameter_name == "delay_update_ms":
             self.open_int_mod(parameter_name, 1, 5, 1000)
         elif parameter_name == "delay_chart_update_ms":
-            self.open_int_mod(parameter_name, 1, 5, 1000)
+            self.open_int_mod(parameter_name, 10, 5, 1000)
         elif parameter_name == "esc_b_id":
             self.open_int_mod(parameter_name, 1, -1, 254)
         elif parameter_name == "chart_speed_points":
