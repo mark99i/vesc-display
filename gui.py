@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, 
 
 import data_updater
 from gui_session import GUISession
+from gui_speed_logic import GUISpeedLogic
 from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
     set_chart_series
 from config import Config, Odometer
@@ -24,6 +25,7 @@ class GUIApp:
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
+    speed_logic: GUISpeedLogic = None
 
     main_speed_lcd: QLCDNumber = None
     chart: QChart = None
@@ -64,6 +66,7 @@ class GUIApp:
         self.settings = GUISettings()
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
+        self.speed_logic = GUISpeedLogic(self)
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
@@ -90,6 +93,7 @@ class GUIApp:
         self.right_param = self.ui.right_param
         self.date = self.ui.date
         self.time = self.ui.time
+        self.main_speed_lcd.mousePressEvent = self.on_click_lcd
 
         self.left_param.setAlignment(Qt.AlignCenter)
         self.main_power.setAlignment(Qt.AlignCenter)
@@ -133,6 +137,10 @@ class GUIApp:
 
     def on_click_left_param(self, event: QMouseEvent):
         self.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
+        pass
+
+    def on_click_lcd(self, ev):
+        self.speed_logic.show()
         pass
 
     # noinspection PyUnusedLocal
@@ -181,6 +189,10 @@ class GUIApp:
         if self.service_status.ui.isVisible():
             return
         if self.session_info.ui.isVisible():
+            return
+
+        if self.speed_logic.ui.isVisible():
+            self.speed_logic.update_speed(state)
             return
 
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())

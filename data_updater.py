@@ -19,6 +19,8 @@ class WorkerThread(Thread):
     play_log_state_arr = None
     play_log_time_offset = None
 
+    speed_logic_mode_enabled = False
+
     class SessionHolder:
         speed_sum = 0
         speed_count = 0
@@ -95,6 +97,10 @@ class WorkerThread(Thread):
 
             if self.state.uart_status == GUIState.UART_STATUS_WORKING_ERROR or \
                     self.state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
+
+                if self.speed_logic_mode_enabled:
+                    self.speed_logic_get_state(state)
+                    continue
 
                 # if set esc_b_id get info from -1 (local) and remote esc
                 if Config.esc_b_id >= 0:
@@ -202,6 +208,20 @@ class WorkerThread(Thread):
 
             time.sleep(float(Config.delay_update_ms) / 1000.0)
 
+
+    def speed_logic_get_mininal_state(self, state: GUIState):
+        result = network.Network.COMM_GET_VALUES_multi([-1])
+        if result is None:
+            return
+        state.esc_a_state.parse_from_json(result["-1"], "A")
+
+        # calculate rpm only if Config.motor_magnets > 0
+        if Config.motor_magnets < 1:    rpm = 0
+        else:                           rpm = state.esc_a_state.erpm / (Config.motor_magnets / 2)
+
+        state.speed = (Config.wheel_diameter / 10) * rpm * 0.001885
+        state.builded_ts_ms = int(time.time() * 1000)
+        self.callback(state)
 
     def play_log_setup(self):
 
