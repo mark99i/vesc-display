@@ -38,6 +38,10 @@ class GUISpeedLogic:
     on60_fill = False
     on70_fill = False
 
+    on50_enabled = True
+    on60_enabled = True
+    on70_enabled = True
+
     last_time_check_updates_in_sec = 0
     calculation_updates_in_sec = 0
     updates_in_sec = 0
@@ -67,6 +71,9 @@ class GUISpeedLogic:
         self.b_close.clicked.connect(self.click_close)
         self.b_clear.clicked.connect(self.click_clear)
         self.le_updates.mousePressEvent = self.click_updates
+        self.le_on50.mousePressEvent = self.click_le_on50
+        self.le_on60.mousePressEvent = self.click_le_on60
+        self.le_on70.mousePressEvent = self.click_le_on70
 
     def show(self):
         self.ui.show()
@@ -106,16 +113,24 @@ class GUISpeedLogic:
                 self.on40_fill = True
                 t_40 = round((state.builded_ts_ms - self.go_ts_ms) / 1000, 2)
                 self.le_on40.setText(f"0-40: {t_40}s")
+                if not self.on50_enabled and not self.on60_enabled and not self.on70_enabled:
+                    self.set_status(self.ST_SUCCESS)
 
             if not self.on50_fill and speed > 50:
                 self.on50_fill = True
                 t_50 = round((state.builded_ts_ms - self.go_ts_ms) / 1000, 2)
                 self.le_on50.setText(f"0-50: {t_50}s")
 
+                if not self.on60_enabled and not self.on70_enabled:
+                    self.set_status(self.ST_SUCCESS)
+
             if not self.on60_fill and speed > 60:
                 self.on60_fill = True
                 t_60 = round((state.builded_ts_ms - self.go_ts_ms) / 1000, 2)
                 self.le_on60.setText(f"0-60: {t_60}s")
+
+                if not self.on70_enabled:
+                    self.set_status(self.ST_SUCCESS)
 
             if not self.on70_fill and speed > 70:
                 self.on70_fill = True
@@ -128,7 +143,18 @@ class GUISpeedLogic:
 
         pass
 
-
+    def click_le_on50(self, ev):
+        self.on50_enabled = not self.on50_enabled
+        self.click_clear()
+        pass
+    def click_le_on60(self, ev):
+        self.on60_enabled = not self.on60_enabled
+        self.click_clear()
+        pass
+    def click_le_on70(self, ev):
+        self.on70_enabled = not self.on70_enabled
+        self.click_clear()
+        pass
 
     def click_close(self):
         self.ui.close()
@@ -155,9 +181,9 @@ class GUISpeedLogic:
 
     def click_clear(self):
         self.le_on40.setText("0-40: ...")
-        self.le_on50.setText("0-50: ...")
-        self.le_on60.setText("0-60: ...")
-        self.le_on70.setText("0-70: ...")
+        self.le_on50.setText("0-50: ..." if self.on50_enabled else "0-50: -")
+        self.le_on60.setText("0-60: ..." if self.on60_enabled else "0-60: -")
+        self.le_on70.setText("0-70: ..." if self.on70_enabled else "0-70: -")
         self.on40_fill = False
         self.on50_fill = False
         self.on60_fill = False
