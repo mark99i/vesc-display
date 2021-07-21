@@ -4,10 +4,8 @@ import threading
 # noinspection PyUnresolvedReferences
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QPlainTextEdit, QLCDNumber
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QLCDNumber
 
-from battery import Battery
-from config import Odometer
 from gui_state import GUIState
 from utils import *
 
@@ -30,7 +28,6 @@ class GUISpeedLogic:
     need_show_updates = False
 
     mstatus = 0
-    last_speed = 0
     go_ts_ms = 0
 
     on40_fill = False
@@ -97,16 +94,14 @@ class GUISpeedLogic:
             return
 
         if self.mstatus == self.ST_CAN_GO:
-            if speed > 1:
+            if speed > 1.1:
                 self.set_status(self.ST_GO)
                 self.go_ts_ms = state.builded_ts_ms
-                self.last_speed = speed
             return
 
         if self.mstatus == self.ST_GO:
-            if self.last_speed > speed:
-                self.set_status(self.ST_NEED_STOP)
-                self.last_speed = 0
+            if speed < 0.8:
+                self.set_status(self.ST_NEED_CLEAN)
                 return
 
             if not self.on40_fill and speed > 40:
@@ -138,8 +133,6 @@ class GUISpeedLogic:
                 self.le_on70.setText(f"0-70: {t_70}s")
 
                 self.set_status(self.ST_SUCCESS)
-
-            self.last_speed = speed
 
         pass
 

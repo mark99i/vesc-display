@@ -73,6 +73,9 @@
      <pointsize>20</pointsize>
     </font>
    </property>
+   <property name="cursor">
+    <cursorShape>BlankCursor</cursorShape>
+   </property>
    <property name="styleSheet">
     <string notr="true">color: rgb(255, 255, 255);
 background-color: rgb(157, 52, 0);
@@ -297,6 +300,9 @@ background: rgba(0,0,0,0.0);</string>
     <font>
      <pointsize>20</pointsize>
     </font>
+   </property>
+   <property name="cursor">
+    <cursorShape>BlankCursor</cursorShape>
    </property>
    <property name="autoFillBackground">
     <bool>false</bool>
