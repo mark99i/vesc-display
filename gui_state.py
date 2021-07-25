@@ -17,6 +17,7 @@ class ESCState:
     voltage: float = 0.0
 
     temperature: float = 0.0
+    motor_temperature: float = 0.0
 
     load_percent: int = 0
 
@@ -30,12 +31,15 @@ class ESCState:
         self.controller_a_b = str(json["controller_id"])
         self.battery_current = json["avg_input_current"]
         self.voltage = json["voltage"]
+        if Config.hw_controller_voltage_offset_mv != 0:
+            self.voltage += (Config.hw_controller_voltage_offset_mv / 1000)
 
         self.power = int(self.battery_current * self.voltage)
 
         self.battery_current = int(self.battery_current)
 
         self.temperature = json["temp_fet_filtered"]
+        self.motor_temperature = json["temp_motor_filtered"]
         self.erpm = json["rpm"]
         self.tachometer = json["tachometer_abs"]
         if self.erpm < 0:
@@ -43,21 +47,21 @@ class ESCState:
 
         self.watt_hours_used = json["watt_hours"] - json["watt_hours_charged"]
 
-        if self.phase_current != 0:
+        if not Config.mtemp_insteadof_load and self.phase_current != 0:
             self.load_percent = int( 100 / (float(Config.hw_controller_current_limit) / float(self.phase_current)) )
             if self.load_percent < 0: self.load_percent *= -1
         else:
             self.load_percent = 0
 
-    def build_gui_str(self) -> str:
+    def build_gui_str(self, sw_load_to_motor_temp: bool = False) -> str:
+        motor_temp_or_load = f"MT: {self.motor_temperature}°\n" if sw_load_to_motor_temp else f"L: {self.load_percent}%\n"
         return \
             f"ESC-{self.controller_a_b.upper()}\n\n" \
             f"PC: {self.phase_current}A\n\n" \
             f"P:  {self.power}W\n\n" \
             f"BC: {self.battery_current}A\n" \
-            f"V:  {self.voltage}v\n\n" \
-            f"L: {self.load_percent}%\n" \
-            f"T: {self.temperature}°С"
+            f"V:  {self.voltage}v\n\n" + motor_temp_or_load + \
+            f"CT: {self.temperature}°"
 
     def parse_from_log(self, js: dict):
         for i in js.keys():

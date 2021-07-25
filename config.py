@@ -17,6 +17,7 @@ class Config:
 
     use_gui_lite: int = 0
 
+    mtemp_insteadof_load: int = 0
     switch_a_b_esc: int = 0
     esc_b_id: int = -1
 
@@ -27,6 +28,7 @@ class Config:
     battery_cells: int = 0
     battery_mah: int = 0
     hw_controller_current_limit: int = 135
+    hw_controller_voltage_offset_mv: int = 0
 
     serial_vesc_api: str = "http://127.0.0.1:2002"  # invisible in settings
     serial_port: str = "/dev/ttyUSB0"

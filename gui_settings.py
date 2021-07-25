@@ -254,12 +254,16 @@ class GUISettings:
             self.open_int_mod(parameter_name, 10, 0, 1000)
         elif parameter_name == "write_logs":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "mtemp_insteadof_load":
+            self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "use_gui_lite":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":
             self.open_int_mod(parameter_name, 5, 0, 1000)
+        elif parameter_name == "hw_controller_voltage_offset_mv":
+            self.open_int_mod(parameter_name, 100, -3000, 3000)
         elif parameter_name == "serial_speed":
             self.open_int_mod(parameter_name, 100, 600, 500000)
         elif parameter_name == "service_enable_debug":

@@ -195,8 +195,8 @@ class GUIApp:
             self.speed_logic.update_speed(state)
             return
 
-        self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
-        self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
+        self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str(Config.mtemp_insteadof_load))
+        self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str(Config.mtemp_insteadof_load))
 
         power_str = f'{state.esc_a_state.phase_current + state.esc_b_state.phase_current}A / ' \
                     f'{state.full_power}W / ' \
