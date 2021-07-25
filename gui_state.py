@@ -1,6 +1,7 @@
 from config import Config
 
 
+
 class ESCState:
     def __init__(self, controller_a_b: str):
         self.controller_a_b = controller_a_b
@@ -36,7 +37,7 @@ class ESCState:
 
         self.temperature = json["temp_fet_filtered"]
         self.erpm = json["rpm"]
-        self.tachometer = json["tachometer"]
+        self.tachometer = json["tachometer_abs"]
         if self.erpm < 0:
             self.erpm *= -1
 
@@ -78,12 +79,16 @@ class GUIState:
     wh_km_Ns: float = 0.0
     wh_km_h: float = 0.0
 
+    nsec_res = None
+
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
 
     average_speed: float = 0.0
     maximum_speed: float = 0.0
-    fet_temp: float = 0.0
+    maximum_power: float = 0.0
+    minimum_power: float = 0.0
+    maximum_fet_temp: float = 0.0
 
     builded_ts_ms: int = 0
 
@@ -105,7 +110,8 @@ class GUIState:
         asdict = dict((name, getattr(self, name)) for name in dir(self))
         for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_"):
+            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "nsec_res":
+                # TODO: make save nsec results to log
                 continue
 
             if i.startswith("esc_"):

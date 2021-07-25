@@ -1,9 +1,9 @@
 import json
-import threading
 import time
 from threading import Thread
 
 import network
+from nsec_calculation import NSec
 from utils import distance_km_from_tachometer, stab
 from battery import Battery
 from config import Config, Odometer
@@ -19,35 +19,7 @@ class WorkerThread(Thread):
     play_log_state_arr = None
     play_log_time_offset = None
 
-    class WH_KM_Ns:
-        last_update_ts_s: int = -1
-        calculated_value: float = 0.0
-        watts: float = 0.0
-        distance: float = -1
-
-        def get_value(self, watts_used: float, now_distance: float) -> float:
-            if Config.wh_km_nsec_calc_interval == -1: return 0.0
-
-            now_time_s = int(time.time())
-
-            if self.distance == -1:
-                self.distance = now_distance
-                self.watts = watts_used
-                self.last_update_ts_s = now_time_s
-                return self.calculated_value
-
-            if now_time_s - self.last_update_ts_s > Config.wh_km_nsec_calc_interval:
-                watt_used_in_n_sec = watts_used - self.watts
-                distance_in_n_sec = now_distance - self.distance
-                if distance_in_n_sec > 0:
-                    self.calculated_value = watt_used_in_n_sec / distance_in_n_sec
-                else:
-                    self.calculated_value = 0.0
-                self.distance = now_distance
-                self.watts = watts_used
-                self.last_update_ts_s = now_time_s
-
-            return self.calculated_value
+    speed_logic_mode_enabled = False
 
     class SessionHolder:
         speed_sum = 0
@@ -55,21 +27,25 @@ class WorkerThread(Thread):
 
         av: float = 0.0
         mx: float = 0.0
+        min_p: float = 0.0
+        max_p: float = 0.0
         ft_max: float = 0.0
 
         def get_info(self):
-            return self.av, self.mx, self.ft_max
+            return self.av, self.mx, self.ft_max, self.min_p, self.max_p
 
-        def append_info(self, fet_temp: float, now_speed: float):
-            if now_speed > 0.5:
+        def append_info(self, now_fet_temp: float, now_speed: float, now_power: float):
+            if now_speed > 2:
                 self.speed_sum += now_speed
                 self.speed_count += 1
                 self.av = round(self.speed_sum / self.speed_count, 2)
-                self.mx = max(self.mx, now_speed)
+                self.mx = round(max(self.mx, now_speed), 2)
 
-            self.ft_max = max(self.ft_max, fet_temp)
+            self.ft_max = max(self.ft_max, now_fet_temp)
+            self.min_p = min(self.min_p, now_power)
+            self.max_p = max(self.max_p, now_power)
 
-    wh_km_Ns_calc = WH_KM_Ns()
+    nsec_calc = NSec()
     session_holder = SessionHolder()
     state = GUIState()
     log = SessionLog()
@@ -122,6 +98,10 @@ class WorkerThread(Thread):
             if self.state.uart_status == GUIState.UART_STATUS_WORKING_ERROR or \
                     self.state.uart_status == GUIState.UART_STATUS_WORKING_SUCCESS:
 
+                if self.speed_logic_mode_enabled:
+                    self.speed_logic_get_mininal_state(state)
+                    continue
+
                 # if set esc_b_id get info from -1 (local) and remote esc
                 if Config.esc_b_id >= 0:
                     result = network.Network.COMM_GET_VALUES_multi([-1, Config.esc_b_id])
@@ -169,9 +149,10 @@ class WorkerThread(Thread):
 
                 if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
 
-                self.session_holder.append_info(fet_temp_max, state.speed)
+                self.session_holder.append_info(fet_temp_max, state.speed, state.full_power)
 
-                state.average_speed, state.maximum_speed, state.fet_temp = self.session_holder.get_info()
+                # TODO: refactor: insert session struct to state
+                state.average_speed, state.maximum_speed, state.maximum_fet_temp, state.minimum_power, state.maximum_power = self.session_holder.get_info()
 
                 # chart points remove last if more Config.chart_*_points and append new value
                 if Config.chart_power_points > 0:
@@ -209,7 +190,7 @@ class WorkerThread(Thread):
                     state.estimated_battery_distance = (Battery.full_battery_wh - watt_hours_used) / state.wh_km
                 else:
                     state.estimated_battery_distance = 0
-                state.wh_km_Ns = self.wh_km_Ns_calc.get_value(watt_hours_used, now_distance)
+                state.wh_km_Ns = self.nsec_calc.get_value(state).watts_on_km
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
@@ -227,6 +208,20 @@ class WorkerThread(Thread):
 
             time.sleep(float(Config.delay_update_ms) / 1000.0)
 
+
+    def speed_logic_get_mininal_state(self, state: GUIState):
+        result = network.Network.COMM_GET_VALUES_multi([-1])
+        if result is None:
+            return
+        state.esc_a_state.parse_from_json(result["-1"], "A")
+
+        # calculate rpm only if Config.motor_magnets > 0
+        if Config.motor_magnets < 1:    rpm = 0
+        else:                           rpm = state.esc_a_state.erpm / (Config.motor_magnets / 2)
+
+        state.speed = (Config.wheel_diameter / 10) * rpm * 0.001885
+        state.builded_ts_ms = int(time.time() * 1000)
+        self.callback(state)
 
     def play_log_setup(self):
 
@@ -262,7 +257,7 @@ class WorkerThread(Thread):
 
         self.callback(self.state)
 
-        wait_time_ms = stab(wait_time_ms, 0, 300)
+        wait_time_ms = stab(wait_time_ms, 0, 300) - 5 # TODO: refactor from time.sleep to time.time() offsets
 
         self.index_log += 1
         time.sleep(wait_time_ms / 1000)

@@ -243,15 +243,15 @@ class GUISettings:
         if   parameter_name == "delay_update_ms":
             self.open_int_mod(parameter_name, 1, 5, 1000)
         elif parameter_name == "delay_chart_update_ms":
-            self.open_int_mod(parameter_name, 1, 5, 1000)
+            self.open_int_mod(parameter_name, 10, 5, 1000)
         elif parameter_name == "esc_b_id":
             self.open_int_mod(parameter_name, 1, -1, 254)
         elif parameter_name == "chart_speed_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "chart_power_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
-        elif parameter_name == "wh_km_nsec_calc_interval":
-            self.open_int_mod(parameter_name, 1, -1, 240)
+        elif parameter_name == "nsec_calc_count":
+            self.open_int_mod(parameter_name, 10, 0, 1000)
         elif parameter_name == "write_logs":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "use_gui_lite":

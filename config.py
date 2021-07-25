@@ -12,7 +12,8 @@ class Config:
     chart_power_points: int = 200
     chart_speed_points: int = 200
 
-    wh_km_nsec_calc_interval: int = 15
+    nsec_calc_count: int = 0
+    # wh_km_nsec_calc_interval: int = 15
 
     use_gui_lite: int = 0
 
@@ -58,7 +59,8 @@ class Config:
             content = open(utils.get_script_dir() + "/configs/config.json", "r").read()
             conf_dict: dict = json.loads(content)
             for i in conf_dict.keys():
-                setattr(Config, i, conf_dict[i])
+                if hasattr(Config, i):
+                    setattr(Config, i, conf_dict[i])
 
     @staticmethod
     def save():

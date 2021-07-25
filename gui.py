@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, 
 
 import data_updater
 from gui_session import GUISession
+from gui_speed_logic import GUISpeedLogic
 from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
     set_chart_series
 from config import Config, Odometer
@@ -24,6 +25,7 @@ class GUIApp:
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
+    speed_logic: GUISpeedLogic = None
 
     main_speed_lcd: QLCDNumber = None
     chart: QChart = None
@@ -64,6 +66,7 @@ class GUIApp:
         self.settings = GUISettings()
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
+        self.speed_logic = GUISpeedLogic(self)
 
         self.close_button = self.ui.close_button
         close_icon = QIcon()
@@ -90,6 +93,7 @@ class GUIApp:
         self.right_param = self.ui.right_param
         self.date = self.ui.date
         self.time = self.ui.time
+        self.main_speed_lcd.mousePressEvent = self.on_click_lcd
 
         self.left_param.setAlignment(Qt.AlignCenter)
         self.main_power.setAlignment(Qt.AlignCenter)
@@ -133,6 +137,10 @@ class GUIApp:
 
     def on_click_left_param(self, event: QMouseEvent):
         self.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
+        pass
+
+    def on_click_lcd(self, ev):
+        self.speed_logic.show()
         pass
 
     # noinspection PyUnusedLocal
@@ -183,6 +191,10 @@ class GUIApp:
         if self.session_info.ui.isVisible():
             return
 
+        if self.speed_logic.ui.isVisible():
+            self.speed_logic.update_speed(state)
+            return
+
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
         self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
 
@@ -195,8 +207,8 @@ class GUIApp:
 
         all_params_values = dict()
         all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(state.session_distance)[:4]
-        all_params_values[2] = str(int(Odometer.full_odometer))
+        all_params_values[1] = str(round(state.session_distance, 2))[:4]
+        all_params_values[2] = str(round(int(Odometer.full_odometer), 1))
         all_params_values[3] = str(self.updates_in_sec)
         all_params_values[4] = str(round(state.wh_km, 1))
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
@@ -227,7 +239,7 @@ class GUIApp:
 
         if now_time_ms - self.last_time_chart_update > Config.delay_chart_update_ms:
             if Config.chart_power_points > 0 or Config.chart_speed_points > 0:
-                set_chart_series(self.chart, state.chart_power, state.chart_speed)
+                set_chart_series(self.chart, state)
             self.last_time_chart_update = now_time_ms
 
         self.calculation_updates_in_sec += 1
