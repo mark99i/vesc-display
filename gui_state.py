@@ -60,7 +60,7 @@ class ESCState:
             f"PC: {self.phase_current}A\n\n" \
             f"P:  {self.power}W\n\n" \
             f"BC: {self.battery_current}A\n" \
-            f"V:  {self.voltage}v\n\n" + motor_temp_or_load + \
+            f"V:  {round(self.voltage, 1)}v\n\n" + motor_temp_or_load + \
             f"CT: {self.temperature}°"
 
     def parse_from_log(self, js: dict):
