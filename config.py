@@ -9,8 +9,8 @@ import utils
 class Config:
     delay_update_ms: int = 1
     delay_chart_update_ms: int = 1000
-    chart_power_points: int = 200
-    chart_speed_points: int = 200
+    chart_points: int = 300
+    chart_pcurrent_insteadof_power: int = 0
 
     nsec_calc_count: int = 0
     # wh_km_nsec_calc_interval: int = 15
@@ -118,8 +118,10 @@ class Odometer:
     @staticmethod
     def __autosaving_func():
         while Odometer.__autosaving_enabled:
-            Odometer.save()
-            time.sleep(utils.stab(Odometer.__autosaving_interval_s, 2, 1000))
+            try:
+                Odometer.save()
+                time.sleep(utils.stab(Odometer.__autosaving_interval_s, 2, 1000))
+            except: pass
 
     @staticmethod
     def get_as_dict() -> dict:

@@ -74,15 +74,20 @@ def setup_empty_chart(chart:QChart):
 
 def set_chart_series(chart: QChart, state):
     # определение типа структуры чтоб ide понимала что это
-    # from gui_state import GUIState
-    # state: GUIState = state
+    from gui_state import GUIState
+    state: GUIState = state
 
     arr_power = state.chart_power
     arr_speed = state.chart_speed
 
-    chart_speed_max = max(max(arr_speed), with_percent(state.maximum_speed, -10)) # верх скорости
-    chart_power_min = min(min(arr_power), with_percent(state.minimum_power, -60)) # низ мощности
-    chart_power_max = max(max(arr_power), with_percent(state.maximum_power, -10)) # верх мощности
+    chart_speed_max = max(max(arr_speed), with_percent(state.session.maximum_speed, -10)) # верх скорости
+    from config import Config
+    if Config.chart_pcurrent_insteadof_power:
+        chart_power_min = min(min(arr_power), with_percent(state.session.minimum_phase_current, -10)) # низ мощности
+        chart_power_max = max(max(arr_power), with_percent(state.session.maximum_phase_current, -10)) # верх мощности
+    else:
+        chart_power_min = min(min(arr_power), with_percent(state.session.minimum_power, -60)) # низ мощности
+        chart_power_max = max(max(arr_power), with_percent(state.session.maximum_power, -10)) # верх мощности
 
     UtilsHolder.chart_speed_axis_y.setRange(0, chart_speed_max)
     UtilsHolder.chart_power_axis_y.setRange(chart_power_min, chart_power_max)

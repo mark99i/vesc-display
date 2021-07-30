@@ -246,10 +246,10 @@ class GUISettings:
             self.open_int_mod(parameter_name, 10, 5, 1000)
         elif parameter_name == "esc_b_id":
             self.open_int_mod(parameter_name, 1, -1, 254)
-        elif parameter_name == "chart_speed_points":
+        elif parameter_name == "chart_points":
             self.open_int_mod(parameter_name, 5, 0, 1000)
-        elif parameter_name == "chart_power_points":
-            self.open_int_mod(parameter_name, 5, 0, 1000)
+        elif parameter_name == "chart_pcurrent_insteadof_power":
+            self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "nsec_calc_count":
             self.open_int_mod(parameter_name, 10, 0, 1000)
         elif parameter_name == "write_logs":

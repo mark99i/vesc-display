@@ -1,4 +1,5 @@
 import json
+import threading
 import time
 from threading import Thread
 
@@ -21,32 +22,7 @@ class WorkerThread(Thread):
 
     speed_logic_mode_enabled = False
 
-    class SessionHolder:
-        speed_sum = 0
-        speed_count = 0
-
-        av: float = 0.0
-        mx: float = 0.0
-        min_p: float = 0.0
-        max_p: float = 0.0
-        ft_max: float = 0.0
-
-        def get_info(self):
-            return self.av, self.mx, self.ft_max, self.min_p, self.max_p
-
-        def append_info(self, now_fet_temp: float, now_speed: float, now_power: float):
-            if now_speed > 2:
-                self.speed_sum += now_speed
-                self.speed_count += 1
-                self.av = round(self.speed_sum / self.speed_count, 2)
-                self.mx = round(max(self.mx, now_speed), 2)
-
-            self.ft_max = max(self.ft_max, now_fet_temp)
-            self.min_p = min(self.min_p, now_power)
-            self.max_p = max(self.max_p, now_power)
-
     nsec_calc = NSec()
-    session_holder = SessionHolder()
     state = GUIState()
     log = SessionLog()
 
@@ -62,6 +38,8 @@ class WorkerThread(Thread):
         else:
             Config.odometer_distance_km_backup = Odometer.full_odometer
             Config.save()
+
+        threading.Thread(target=self.state.session.f_autosaving, name="autosaving-session").start()
 
         status = network.Network.get_uart_status()
         if status is None: self.state.uart_status = GUIState.UART_STATUS_ERROR; return
@@ -79,9 +57,8 @@ class WorkerThread(Thread):
     def run(self):
         state = self.state
         state.chart_power = []
-        for i in range(0, Config.chart_power_points):
+        for i in range(0, Config.chart_points):
             state.chart_power.append(0)
-        for i in range(0, Config.chart_speed_points):
             state.chart_speed.append(0)
 
         time.sleep(0.5)
@@ -132,12 +109,10 @@ class WorkerThread(Thread):
                 if state.esc_b_state.controller_a_b != "?":
                     voltage = (state.esc_a_state.voltage + state.esc_b_state.voltage) / 2
                     watt_hours_used = state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used
-                    fet_temp_max = max(state.esc_a_state.temperature, state.esc_b_state.temperature)
                     state.full_power = state.esc_a_state.power + state.esc_b_state.power
                 else:
                     voltage = state.esc_a_state.voltage
                     watt_hours_used = state.esc_a_state.watt_hours_used
-                    fet_temp_max = state.esc_a_state.temperature
                     state.full_power = state.esc_a_state.power
 
                 # calculate rpm only if Config.motor_magnets > 0
@@ -149,21 +124,16 @@ class WorkerThread(Thread):
 
                 if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
 
-                self.session_holder.append_info(fet_temp_max, state.speed, state.full_power)
-
-                # TODO: refactor: insert session struct to state
-                state.average_speed, state.maximum_speed, state.maximum_fet_temp, state.minimum_power, state.maximum_power = self.session_holder.get_info()
-
                 # chart points remove last if more Config.chart_*_points and append new value
-                if Config.chart_power_points > 0:
-                    while len(state.chart_power) > Config.chart_power_points:
+                if Config.chart_points > 0:
+                    while len(state.chart_power) > Config.chart_points:
                         state.chart_power.pop(0)
-                    state.chart_power.append(state.full_power)
-
-                if Config.chart_speed_points > 0:
-                    while len(state.chart_speed) > Config.chart_speed_points:
                         state.chart_speed.pop(0)
                     state.chart_speed.append(state.speed)
+                    if Config.chart_pcurrent_insteadof_power:
+                        state.chart_power.append(state.esc_a_state.phase_current + state.esc_b_state.phase_current)
+                    else:
+                        state.chart_power.append(state.full_power)
 
                 # calculate distance from tachometer
                 # adding session to odometer and clear session distance if now_distance > Odometer.session
@@ -183,6 +153,9 @@ class WorkerThread(Thread):
 
                 state.battery_percent = Battery.calculate_battery_percent(voltage, watt_hours_used)
 
+                state.builded_ts_ms = int(time.time() * 1000)
+                self.state.session.update(state)
+
                 # calc indicators
                 if now_distance > 0:
                     state.wh_km = watt_hours_used / now_distance
@@ -195,7 +168,6 @@ class WorkerThread(Thread):
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
 
-                state.builded_ts_ms = int(time.time() * 1000)
                 if Config.write_logs:
                     self.log.write_state(json.dumps(state.get_json_for_log()))
             else:

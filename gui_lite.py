@@ -186,7 +186,7 @@ class GUIApp:
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
         all_params_values[6] = str(state.estimated_battery_distance)[:4]
         all_params_values[7] = str(state.wh_km_h)
-        all_params_values[8] = str(round(state.average_speed, 1))
+        all_params_values[8] = str(round(state.session.average_speed, 1))
         all_params_values[9] = str(state.full_power)
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
