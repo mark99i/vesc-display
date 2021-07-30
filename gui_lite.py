@@ -10,6 +10,7 @@ import data_updater
 from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
 from gui_speed_logic import GUISpeedLogic
+from nsec_calculation import NSec
 from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display
 from config import Config, Odometer
 from gui_settings import GUISettings
@@ -49,6 +50,7 @@ class GUIApp:
     calculation_updates_in_sec = 0
     updates_in_sec = 0
 
+    last_menu_event: QMouseEvent = None
     last_uart_status = ""
 
     def __init__(self):
@@ -109,7 +111,7 @@ class GUIApp:
     def on_click_battery(self, event: QMouseEvent):
         self.session_info.show()
 
-    def show_menu_param_change(self, event, param_position: ButtonPos):
+    def show_menu_param_change(self, event: QMouseEvent, param_position: ButtonPos):
         menu = QMenu(self.ui)
         menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
 
@@ -128,6 +130,7 @@ class GUIApp:
                 action.setText(name)
                 actions.append(action)
 
+        self.last_menu_event = event
         menu.triggered.connect(self.menu_param_choosen)
         menu.addActions(actions)
         menu.exec(event.globalPos())
@@ -146,13 +149,21 @@ class GUIApp:
 
             actions = []
 
-            action = QAction()
-            action.setData("ssds")
-            action.setText("nsec1")
-            actions.append(action)
+            for indicator in [i for i in NSec.NSecResult.OptionsEnum]:
+                name: str = indicator.name
+                #if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
+                #    name = "✔ " + name
+                #if param_position == ButtonPos.CENTER_PARAM and self.right_param_active_ind == indicator:
+                #    name = "✔ " + name
+                #if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
+                #    name = "✔ " + name
+                action = QAction()
+                #action.setData(param_position)
+                action.setText(name)
+                actions.append(action)
 
             menu.addActions(actions)
-            menu.exec()
+            menu.exec(self.last_menu_event.globalPos())
 
             return
 
@@ -169,11 +180,11 @@ class GUIApp:
         Config.save()
 
     def callback_update_gui(self, state: GUIState):
-        if self.settings.ui.isVisible():
+        if self.speed_logic.ui.isVisible():
+            self.speed_logic.update_speed(state)
             return
-        if self.service_status.ui.isVisible():
-            return
-        if self.session_info.ui.isVisible():
+
+        if not self.ui.isActiveWindow():
             return
 
         self.main_speed_lcd.display(str(round(state.speed, 1)))
