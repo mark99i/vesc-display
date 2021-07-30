@@ -49,14 +49,18 @@ class GUISession:
         watt_h_used = int(state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used)
 
         text = f"""
-session distance: {round(Odometer.session_mileage, 2)} km
-session average speed: {round(state.session.average_speed, 2)} km/h
-session maximum speed: {round(state.session.maximum_speed, 2)} km/h
+distance: {round(Odometer.session_mileage, 2)} km
+average speed: {round(state.session.average_speed, 2)} km/h
+maximum speed: {round(state.session.maximum_speed, 2)} km/h
+maximum power: {round(state.session.maximum_power, 2)} Wh
+average battery current: {round(state.session.average_battery_current, 2)} A
+maximum battery current: {round(state.session.maximum_battery_current, 2)} A
 
 watt hours used {watt_h_used} from {Battery.full_battery_wh}, est ~{Battery.full_battery_wh - watt_h_used} 
 watt hours/km: {round(state.wh_km, 2)} wh/km
 
-session maximum fet temp: {state.session.maximum_fet_temp} °С
+maximum fet temp: {state.session.maximum_fet_temp} °С
+maximum motor temp: {state.session.maximum_motor_temp} °С
 
 ---
 odometer: {round(Odometer.full_odometer, 2)} km

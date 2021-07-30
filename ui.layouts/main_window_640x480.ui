@@ -146,38 +146,6 @@ color: rgb(255, 255, 255);
 border-bottom: none;</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="close_button">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>0</y>
-      <width>41</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::ClickFocus</enum>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: rgb(255, 85, 0);
-border: none;</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="iconSize">
-     <size>
-      <width>48</width>
-      <height>48</height>
-     </size>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="main_power">
     <property name="geometry">
      <rect>
@@ -289,9 +257,9 @@ border: none;</string>
    <widget class="QLineEdit" name="date">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>10</x>
       <y>0</y>
-      <width>141</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -318,6 +286,9 @@ border: none;</string>
     <property name="text">
      <string>21.06.21</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
     <property name="readOnly">
      <bool>true</bool>
     </property>
@@ -327,7 +298,7 @@ border: none;</string>
      <rect>
       <x>460</x>
       <y>0</y>
-      <width>141</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -354,43 +325,11 @@ border: none;</string>
     <property name="text">
      <string>13:52:22</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
     <property name="readOnly">
      <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="settings_button">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>41</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::ClickFocus</enum>
-    </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);
-border-color: rgb(255, 255, 255);</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="iconSize">
-     <size>
-      <width>48</width>
-      <height>48</height>
-     </size>
     </property>
    </widget>
    <widget class="QPlainTextEdit" name="esc_b_desc">

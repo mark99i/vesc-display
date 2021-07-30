@@ -4,11 +4,12 @@ import time
 from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QMouseEvent
+from PyQt5.QtGui import QPainter, QMouseEvent
 from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
     QTextEdit, QMenu, QAction
 
 import data_updater
+from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
 from gui_speed_logic import GUISpeedLogic
 from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
@@ -22,6 +23,7 @@ class GUIApp:
     app: QApplication = None
     ui: QMainWindow = None
 
+    main_menu: GUIMainMenu = None
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
@@ -41,8 +43,6 @@ class GUIApp:
     date: QLineEdit = None
     time: QLineEdit = None
 
-    settings_button: QPushButton = None
-    close_button: QPushButton = None
     uart_button: QPushButton = None
 
     data_updater_thread: data_updater.WorkerThread = None
@@ -67,18 +67,7 @@ class GUIApp:
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
         self.speed_logic = GUISpeedLogic(self)
-
-        self.close_button = self.ui.close_button
-        close_icon = QIcon()
-        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
-        self.close_button.setIcon(close_icon)
-        self.close_button.clicked.connect(self.on_click_close_app)
-
-        self.settings_button = self.ui.settings_button
-        settings_icon = QIcon()
-        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
-        self.settings_button.setIcon(settings_icon)
-        self.settings_button.clicked.connect(self.on_click_open_settings)
+        self.main_menu = GUIMainMenu(self)
 
         self.chartView = self.ui.chart
         self.chart = self.chartView.chart()
@@ -119,15 +108,6 @@ class GUIApp:
         self.ui.show()
         self.app.exec()
 
-    def on_click_close_app(self):
-        self.ui.hide()
-        self.ui.destroy()
-        raise Exception("exit")
-        # TODO: need exit func
-
-    def on_click_open_settings(self):
-        self.settings.show()
-
     def on_click_uart_settings(self):
         self.service_status.show()
 
@@ -140,8 +120,7 @@ class GUIApp:
         pass
 
     def on_click_lcd(self, ev):
-        self.speed_logic.show()
-        pass
+        self.main_menu.show()
 
     # noinspection PyUnusedLocal
     def on_click_center_param(self, event: QMouseEvent):
@@ -184,15 +163,11 @@ class GUIApp:
         Config.save()
 
     def callback_update_gui(self, state: GUIState):
-        if self.settings.ui.isVisible():
-            return
-        if self.service_status.ui.isVisible():
-            return
-        if self.session_info.ui.isVisible():
-            return
-
         if self.speed_logic.ui.isVisible():
             self.speed_logic.update_speed(state)
+            return
+
+        if not self.ui.isActiveWindow():
             return
 
         self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str(Config.mtemp_insteadof_load))

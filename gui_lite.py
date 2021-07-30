@@ -2,16 +2,15 @@ import time
 
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtChart import QChart, QChartView
-from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QMouseEvent
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
-    QTextEdit, QMenu, QAction, QProgressBar
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPixmap, QMouseEvent
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QLineEdit, QMenu, QAction, QProgressBar
 
 import data_updater
+from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
-from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
-    set_chart_series
+from gui_speed_logic import GUISpeedLogic
+from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
@@ -24,6 +23,8 @@ class GUIApp:
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
+    main_menu: GUIMainMenu = None
+    speed_logic: GUISpeedLogic = None
 
     main_speed_lcd: QLCDNumber = None
 
@@ -36,8 +37,6 @@ class GUIApp:
     date: QLineEdit = None
     time: QLineEdit = None
 
-    settings_button: QPushButton = None
-    close_button: QPushButton = None
     uart_button: QPushButton = None
 
     data_updater_thread: data_updater.WorkerThread = None
@@ -60,18 +59,8 @@ class GUIApp:
         self.settings = GUISettings()
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
-
-        self.close_button = self.ui.close_button
-        close_icon = QIcon()
-        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
-        self.close_button.setIcon(close_icon)
-        self.close_button.clicked.connect(self.on_click_close_app)
-
-        self.settings_button = self.ui.settings_button
-        settings_icon = QIcon()
-        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
-        self.settings_button.setIcon(settings_icon)
-        self.settings_button.clicked.connect(self.on_click_open_settings)
+        self.main_menu = GUIMainMenu(self)
+        self.speed_logic = GUISpeedLogic(self)
 
         self.main_speed_lcd = self.ui.main_speed
         self.left_param = self.ui.left_param
@@ -94,19 +83,14 @@ class GUIApp:
         self.uart_button.clicked.connect(self.on_click_uart_settings)
 
         self.battery_progress_bar.mousePressEvent = self.on_click_battery
+        self.main_speed_lcd.mousePressEvent = self.on_click_lcd
 
     def show(self):
         self.ui.show()
         self.app.exec()
 
-    def on_click_close_app(self):
-        self.ui.hide()
-        self.ui.destroy()
-        raise Exception("exit")
-        # TODO: need exit func
-
-    def on_click_open_settings(self):
-        self.settings.show()
+    def on_click_lcd(self, event: QMouseEvent):
+        self.main_menu.show()
 
     def on_click_uart_settings(self):
         self.service_status.show()
@@ -154,6 +138,24 @@ class GUIApp:
         if " " in choosen_item: return
 
         print("set", choosen_item, "to", param_pos)
+
+        if choosen_item == ParamIndicators.NSec.name:
+            print("choosen nsec!!")
+            menu = QMenu(self.ui)
+            menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
+
+            actions = []
+
+            action = QAction()
+            action.setData("ssds")
+            action.setText("nsec1")
+            actions.append(action)
+
+            menu.addActions(actions)
+            menu.exec()
+
+            return
+
 
         if param_pos == ButtonPos.RIGHT_PARAM:
             self.right_param_active_ind = ParamIndicators[choosen_item]

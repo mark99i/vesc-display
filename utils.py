@@ -27,6 +27,7 @@ class ParamIndicators(Enum):
     WhKmH = 7
     AverageSpeed = 8
     FullPower = 9
+    # NSec = 10
 
 class UtilsHolder:
     chart_power_pen = None
