@@ -27,6 +27,7 @@ class ParamIndicators(Enum):
     WhKmH = 7
     AverageSpeed = 8
     FullPower = 9
+    # NSec = 10
 
 class UtilsHolder:
     chart_power_pen = None
@@ -35,8 +36,6 @@ class UtilsHolder:
     chart_speed_axis_y = None
 
     resolved_resolution = None
-
-    need_restart_app = False
 
 def get_script_dir(follow_symlinks=True):
     if getattr(sys, 'frozen', False): # py2exe, PyInstaller, cx_Freeze
@@ -74,15 +73,20 @@ def setup_empty_chart(chart:QChart):
 
 def set_chart_series(chart: QChart, state):
     # определение типа структуры чтоб ide понимала что это
-    # from gui_state import GUIState
-    # state: GUIState = state
+    from gui_state import GUIState
+    state: GUIState = state
 
     arr_power = state.chart_power
     arr_speed = state.chart_speed
 
-    chart_speed_max = max(max(arr_speed), with_percent(state.maximum_speed, -10)) # верх скорости
-    chart_power_min = min(min(arr_power), with_percent(state.minimum_power, -60)) # низ мощности
-    chart_power_max = max(max(arr_power), with_percent(state.maximum_power, -10)) # верх мощности
+    chart_speed_max = max(max(arr_speed), with_percent(state.session.maximum_speed, -10)) # верх скорости
+    from config import Config
+    if Config.chart_pcurrent_insteadof_power:
+        chart_power_min = min(min(arr_power), with_percent(state.session.minimum_phase_current, -10)) # низ мощности
+        chart_power_max = max(max(arr_power), with_percent(state.session.maximum_phase_current, -10)) # верх мощности
+    else:
+        chart_power_min = min(min(arr_power), with_percent(state.session.minimum_power, -60)) # низ мощности
+        chart_power_max = max(max(arr_power), with_percent(state.session.maximum_power, -10)) # верх мощности
 
     UtilsHolder.chart_speed_axis_y.setRange(0, chart_speed_max)
     UtilsHolder.chart_power_axis_y.setRange(chart_power_min, chart_power_max)
@@ -218,13 +222,16 @@ class GUIAppComm(QObject):
 
     callback = None
 
+    def __init__(self):
+        super().__init__()
+        self.closeApp.connect(self.on_update)
+
     def push_data(self, state):
         try: self.closeApp.emit(state)
         except: pass
 
-    def setCallback(self, callback):
+    def set_callback(self, callback):
         self.callback = callback
-        self.closeApp.connect(self.on_update)
 
     @pyqtSlot(object)
     def on_update(self, state):

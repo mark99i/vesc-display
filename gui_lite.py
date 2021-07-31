@@ -2,28 +2,30 @@ import time
 
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
-from PyQt5.QtChart import QChart, QChartView
-from PyQt5.QtCore import Qt, pyqtSignal, QObject, pyqtSlot
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QMouseEvent
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
-    QTextEdit, QMenu, QAction, QProgressBar
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPixmap, QMouseEvent
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QLineEdit, QMenu, QAction, QProgressBar
 
 import data_updater
+from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
-from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
-    set_chart_series
+from gui_speed_logic import GUISpeedLogic
+from nsec_calculation import NSec
+from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
 from service_status import GUIServiceState
 
 class GUIApp:
-    app: QApplication = None
+    starter = None
     ui: QMainWindow = None
 
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
+    main_menu: GUIMainMenu = None
+    speed_logic: GUISpeedLogic = None
 
     main_speed_lcd: QLCDNumber = None
 
@@ -36,8 +38,6 @@ class GUIApp:
     date: QLineEdit = None
     time: QLineEdit = None
 
-    settings_button: QPushButton = None
-    close_button: QPushButton = None
     uart_button: QPushButton = None
 
     data_updater_thread: data_updater.WorkerThread = None
@@ -50,28 +50,20 @@ class GUIApp:
     calculation_updates_in_sec = 0
     updates_in_sec = 0
 
+    last_menu_event: QMouseEvent = None
     last_uart_status = ""
 
-    def __init__(self):
-        self.app = QApplication([])
+    def __init__(self, starter):
+        from main import Starter
+        self.starter: Starter = starter
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_lite_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
-        self.settings = GUISettings()
+        self.settings = GUISettings(self)
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
-
-        self.close_button = self.ui.close_button
-        close_icon = QIcon()
-        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
-        self.close_button.setIcon(close_icon)
-        self.close_button.clicked.connect(self.on_click_close_app)
-
-        self.settings_button = self.ui.settings_button
-        settings_icon = QIcon()
-        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
-        self.settings_button.setIcon(settings_icon)
-        self.settings_button.clicked.connect(self.on_click_open_settings)
+        self.main_menu = GUIMainMenu(self)
+        self.speed_logic = GUISpeedLogic(self)
 
         self.main_speed_lcd = self.ui.main_speed
         self.left_param = self.ui.left_param
@@ -94,19 +86,13 @@ class GUIApp:
         self.uart_button.clicked.connect(self.on_click_uart_settings)
 
         self.battery_progress_bar.mousePressEvent = self.on_click_battery
+        self.main_speed_lcd.mousePressEvent = self.on_click_lcd
 
     def show(self):
         self.ui.show()
-        self.app.exec()
 
-    def on_click_close_app(self):
-        self.ui.hide()
-        self.ui.destroy()
-        raise Exception("exit")
-        # TODO: need exit func
-
-    def on_click_open_settings(self):
-        self.settings.show()
+    def on_click_lcd(self, event: QMouseEvent):
+        self.main_menu.show()
 
     def on_click_uart_settings(self):
         self.service_status.show()
@@ -125,7 +111,7 @@ class GUIApp:
     def on_click_battery(self, event: QMouseEvent):
         self.session_info.show()
 
-    def show_menu_param_change(self, event, param_position: ButtonPos):
+    def show_menu_param_change(self, event: QMouseEvent, param_position: ButtonPos):
         menu = QMenu(self.ui)
         menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
 
@@ -144,6 +130,7 @@ class GUIApp:
                 action.setText(name)
                 actions.append(action)
 
+        self.last_menu_event = event
         menu.triggered.connect(self.menu_param_choosen)
         menu.addActions(actions)
         menu.exec(event.globalPos())
@@ -154,6 +141,32 @@ class GUIApp:
         if " " in choosen_item: return
 
         print("set", choosen_item, "to", param_pos)
+
+        if choosen_item == ParamIndicators.NSec.name:
+            print("choosen nsec!!")
+            menu = QMenu(self.ui)
+            menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
+
+            actions = []
+
+            for indicator in [i for i in NSec.NSecResult.OptionsEnum]:
+                name: str = indicator.name
+                #if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
+                #    name = "✔ " + name
+                #if param_position == ButtonPos.CENTER_PARAM and self.right_param_active_ind == indicator:
+                #    name = "✔ " + name
+                #if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
+                #    name = "✔ " + name
+                action = QAction()
+                #action.setData(param_position)
+                action.setText(name)
+                actions.append(action)
+
+            menu.addActions(actions)
+            menu.exec(self.last_menu_event.globalPos())
+
+            return
+
 
         if param_pos == ButtonPos.RIGHT_PARAM:
             self.right_param_active_ind = ParamIndicators[choosen_item]
@@ -167,11 +180,11 @@ class GUIApp:
         Config.save()
 
     def callback_update_gui(self, state: GUIState):
-        if self.settings.ui.isVisible():
+        if self.speed_logic.ui.isVisible():
+            self.speed_logic.update_speed(state)
             return
-        if self.service_status.ui.isVisible():
-            return
-        if self.session_info.ui.isVisible():
+
+        if not self.ui.isActiveWindow():
             return
 
         self.main_speed_lcd.display(str(round(state.speed, 1)))
@@ -186,7 +199,7 @@ class GUIApp:
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
         all_params_values[6] = str(state.estimated_battery_distance)[:4]
         all_params_values[7] = str(state.wh_km_h)
-        all_params_values[8] = str(round(state.average_speed, 1))
+        all_params_values[8] = str(round(state.session.average_speed, 1))
         all_params_values[9] = str(state.full_power)
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])

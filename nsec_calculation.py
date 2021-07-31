@@ -1,5 +1,6 @@
 import json
 import copy
+from enum import Enum, auto
 
 from config import Config
 from gui_state import GUIState
@@ -20,8 +21,26 @@ class NSec:
         watts_on_km: float = 0
         max_diff_voltage: float = 0
 
+        class OptionsEnum(Enum):
+            min_voltage = auto()
+            max_voltage = auto()
+            min_b_current = auto()
+            max_b_current = auto()
+            min_p_current = auto()
+            max_p_current = auto()
+            min_speed = auto()
+            max_speed = auto()
+            distance = auto()
+            watts_used = auto()
+            watts_on_km = auto()
+            max_diff_voltage = auto()
+
+
     states_arr = []
     last_result = NSecResult()
+
+    def get_option_by_enum(self, opt: NSecResult.OptionsEnum):
+        getattr(self, opt.name)
 
     # Подсчет значений NSecResult методом скользящего окна на основе последних (Config.nsec_calc_count) состояний
     def get_value(self, nstate: GUIState) -> NSecResult:

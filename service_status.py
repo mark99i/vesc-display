@@ -70,7 +70,7 @@ class GUIServiceState:
         self.b_upd.setEnabled(True)
 
         if js.get("local_id", -1) != -1:
-            self.parent.data_updater_thread.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
+            self.parent.worker_thread.state.uart_status = GUIState.UART_STATUS_WORKING_ERROR
 
     def click_update_status(self):
         self.le_systemd.setText("systemd state: ...")

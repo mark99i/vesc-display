@@ -311,10 +311,16 @@ border: none;</string>
      <height>71</height>
     </rect>
    </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="font">
     <font>
      <family>Consolas</family>
-     <pointsize>18</pointsize>
+     <pointsize>16</pointsize>
     </font>
    </property>
    <property name="acceptDrops">

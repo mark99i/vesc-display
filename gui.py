@@ -4,11 +4,12 @@ import time
 from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QIcon, QPixmap, QMouseEvent
+from PyQt5.QtGui import QPainter, QMouseEvent
 from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
     QTextEdit, QMenu, QAction
 
 import data_updater
+from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
 from gui_speed_logic import GUISpeedLogic
 from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display, setup_empty_chart, \
@@ -19,9 +20,10 @@ from gui_state import GUIState
 from service_status import GUIServiceState
 
 class GUIApp:
-    app: QApplication = None
+    starter = None
     ui: QMainWindow = None
 
+    main_menu: GUIMainMenu = None
     settings: GUISettings = None
     service_status: GUIServiceState = None
     session_info: GUISession = None
@@ -41,8 +43,6 @@ class GUIApp:
     date: QLineEdit = None
     time: QLineEdit = None
 
-    settings_button: QPushButton = None
-    close_button: QPushButton = None
     uart_button: QPushButton = None
 
     data_updater_thread: data_updater.WorkerThread = None
@@ -58,27 +58,17 @@ class GUIApp:
 
     last_uart_status = ""
 
-    def __init__(self):
-        self.app = QApplication([])
+    def __init__(self, starter):
+        from main import Starter
+        self.starter: Starter = starter
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
-        self.settings = GUISettings()
+        self.settings = GUISettings(self)
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
         self.speed_logic = GUISpeedLogic(self)
-
-        self.close_button = self.ui.close_button
-        close_icon = QIcon()
-        close_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/close.png"), QIcon.Selected, QIcon.On)
-        self.close_button.setIcon(close_icon)
-        self.close_button.clicked.connect(self.on_click_close_app)
-
-        self.settings_button = self.ui.settings_button
-        settings_icon = QIcon()
-        settings_icon.addPixmap(QPixmap(f"{get_script_dir(False)}/ui.images/settings.png"), QIcon.Selected, QIcon.On)
-        self.settings_button.setIcon(settings_icon)
-        self.settings_button.clicked.connect(self.on_click_open_settings)
+        self.main_menu = GUIMainMenu(self)
 
         self.chartView = self.ui.chart
         self.chart = self.chartView.chart()
@@ -117,16 +107,6 @@ class GUIApp:
 
     def show(self):
         self.ui.show()
-        self.app.exec()
-
-    def on_click_close_app(self):
-        self.ui.hide()
-        self.ui.destroy()
-        raise Exception("exit")
-        # TODO: need exit func
-
-    def on_click_open_settings(self):
-        self.settings.show()
 
     def on_click_uart_settings(self):
         self.service_status.show()
@@ -140,8 +120,7 @@ class GUIApp:
         pass
 
     def on_click_lcd(self, ev):
-        self.speed_logic.show()
-        pass
+        self.main_menu.show()
 
     # noinspection PyUnusedLocal
     def on_click_center_param(self, event: QMouseEvent):
@@ -184,19 +163,15 @@ class GUIApp:
         Config.save()
 
     def callback_update_gui(self, state: GUIState):
-        if self.settings.ui.isVisible():
-            return
-        if self.service_status.ui.isVisible():
-            return
-        if self.session_info.ui.isVisible():
-            return
-
         if self.speed_logic.ui.isVisible():
             self.speed_logic.update_speed(state)
             return
 
-        self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str())
-        self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str())
+        if not self.ui.isActiveWindow():
+            return
+
+        self.esc_a_element.setPlainText(state.esc_a_state.build_gui_str(Config.mtemp_insteadof_load))
+        self.esc_b_element.setPlainText(state.esc_b_state.build_gui_str(Config.mtemp_insteadof_load))
 
         power_str = f'{state.esc_a_state.phase_current + state.esc_b_state.phase_current}A / ' \
                     f'{state.full_power}W / ' \
@@ -214,7 +189,7 @@ class GUIApp:
         all_params_values[5] = str(round(state.wh_km_Ns, 1))
         all_params_values[6] = str(state.estimated_battery_distance)[:4]
         all_params_values[7] = str(state.wh_km_h)
-        all_params_values[8] = str(round(state.average_speed, 1))
+        all_params_values[8] = str(round(state.session.average_speed, 1))
         all_params_values[9] = str(state.full_power)
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
@@ -238,7 +213,7 @@ class GUIApp:
             self.last_uart_status = state.uart_status
 
         if now_time_ms - self.last_time_chart_update > Config.delay_chart_update_ms:
-            if Config.chart_power_points > 0 or Config.chart_speed_points > 0:
+            if Config.chart_points > 0:
                 set_chart_series(self.chart, state)
             self.last_time_chart_update = now_time_ms
 

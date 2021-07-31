@@ -129,7 +129,7 @@
    <property name="font">
     <font>
      <family>Consolas</family>
-     <pointsize>18</pointsize>
+     <pointsize>14</pointsize>
     </font>
    </property>
    <property name="cursor" stdset="0">

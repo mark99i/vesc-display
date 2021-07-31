@@ -1,5 +1,87 @@
+import json
+import os
+import time
+
+import utils
 from config import Config
 
+class SessionInfo:
+    average_speed: float = 0
+    maximum_speed: float = 0
+    minimum_power: float = 0
+    maximum_power: float = 0
+    minimum_phase_current: float = 0
+    maximum_phase_current: float = 0
+    average_battery_current: float = 0
+    maximum_battery_current: float = 0
+    maximum_fet_temp: float = 0
+    maximum_motor_temp: float = 0
+
+    __av_speed_calc_sum: float = 0
+    __av_speed_calc_count: int = 0
+    __av_battery_current_calc_sum: float = 0
+    __av_battery_current_calc_count: int = 0
+
+    speed_session_history: list = list()
+    power_session_history: list = list()
+    battery_session_history: list = list()
+    ts_session_history: list = list()
+
+    def update(self, state):
+        state: GUIState = state
+        if state.speed > 2:
+            self.__av_speed_calc_sum += state.speed
+            self.__av_speed_calc_count += 1
+            self.average_speed = round(self.__av_speed_calc_sum / self.__av_speed_calc_count, 2)
+            self.maximum_speed = round(max(self.maximum_speed, state.speed), 2)
+
+            self.speed_session_history.append(state.speed)
+            self.power_session_history.append(state.full_power)
+            self.battery_session_history.append(state.battery_percent)
+            self.ts_session_history.append(state.builded_ts_ms)
+
+        self.maximum_fet_temp = max(self.maximum_fet_temp,
+                                    max(state.esc_a_state.temperature, state.esc_b_state.temperature))
+        self.maximum_motor_temp = max(self.maximum_motor_temp,
+                                    max(state.esc_a_state.motor_temperature, state.esc_b_state.motor_temperature))
+        self.minimum_power = min(self.minimum_power, state.full_power)
+        self.maximum_power = max(self.maximum_power, state.full_power)
+
+        phase_current = state.esc_a_state.phase_current + state.esc_b_state.phase_current
+        self.minimum_phase_current = min(self.minimum_phase_current, phase_current)
+        self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
+
+        battery_current = state.esc_a_state.battery_current + state.esc_b_state.battery_current
+        self.__av_battery_current_calc_sum += battery_current
+        self.__av_battery_current_calc_count += 1
+        self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
+        self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
+
+    def f_get_json(self) -> dict:
+        result = {}
+
+        asdict = dict((name, getattr(self, name)) for name in dir(self))
+        for i in asdict.keys():
+            i = str(i)
+            if "__" in i or i.startswith("f_") or i.startswith("update"):
+                continue
+            result[i] = asdict[i]
+
+        return result
+
+    def f_parse_from_log(self, js: dict):
+        for i in js.keys():
+            setattr(self, i, js[i])
+
+    def f_autosaving(self):
+        while True:
+            try:
+                with open(utils.get_script_dir() + "/configs/session_last.json", "w") as fp:
+                    content = json.dumps(self.f_get_json(), indent=4)
+                    fp.write(content)
+                    os.fsync(fp)
+                time.sleep(30)
+            except: pass
 
 
 class ESCState:
@@ -17,6 +99,7 @@ class ESCState:
     voltage: float = 0.0
 
     temperature: float = 0.0
+    motor_temperature: float = 0.0
 
     load_percent: int = 0
 
@@ -30,12 +113,15 @@ class ESCState:
         self.controller_a_b = str(json["controller_id"])
         self.battery_current = json["avg_input_current"]
         self.voltage = json["voltage"]
+        if Config.hw_controller_voltage_offset_mv != 0:
+            self.voltage += (Config.hw_controller_voltage_offset_mv / 1000)
 
         self.power = int(self.battery_current * self.voltage)
 
         self.battery_current = int(self.battery_current)
 
         self.temperature = json["temp_fet_filtered"]
+        self.motor_temperature = json["temp_motor_filtered"]
         self.erpm = json["rpm"]
         self.tachometer = json["tachometer_abs"]
         if self.erpm < 0:
@@ -43,21 +129,21 @@ class ESCState:
 
         self.watt_hours_used = json["watt_hours"] - json["watt_hours_charged"]
 
-        if self.phase_current != 0:
+        if not Config.mtemp_insteadof_load and self.phase_current != 0:
             self.load_percent = int( 100 / (float(Config.hw_controller_current_limit) / float(self.phase_current)) )
             if self.load_percent < 0: self.load_percent *= -1
         else:
             self.load_percent = 0
 
-    def build_gui_str(self) -> str:
+    def build_gui_str(self, sw_load_to_motor_temp: bool = False) -> str:
+        motor_temp_or_load = f"MT: {self.motor_temperature}°\n" if sw_load_to_motor_temp else f"L: {self.load_percent}%\n"
         return \
             f"ESC-{self.controller_a_b.upper()}\n\n" \
             f"PC: {self.phase_current}A\n\n" \
             f"P:  {self.power}W\n\n" \
             f"BC: {self.battery_current}A\n" \
-            f"V:  {self.voltage}v\n\n" \
-            f"L: {self.load_percent}%\n" \
-            f"T: {self.temperature}°С"
+            f"V:  {round(self.voltage, 1)}v\n\n" + motor_temp_or_load + \
+            f"CT: {self.temperature}°"
 
     def parse_from_log(self, js: dict):
         for i in js.keys():
@@ -79,16 +165,11 @@ class GUIState:
     wh_km_Ns: float = 0.0
     wh_km_h: float = 0.0
 
-    nsec_res = None
+    nsec = None
+    session = SessionInfo()
 
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
-
-    average_speed: float = 0.0
-    maximum_speed: float = 0.0
-    maximum_power: float = 0.0
-    minimum_power: float = 0.0
-    maximum_fet_temp: float = 0.0
 
     builded_ts_ms: int = 0
 
@@ -110,11 +191,11 @@ class GUIState:
         asdict = dict((name, getattr(self, name)) for name in dir(self))
         for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "nsec_res":
+            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "session":
                 # TODO: make save nsec results to log
                 continue
 
-            if i.startswith("esc_"):
+            if i.startswith("esc_") or i == "nsec" :
                 result[i] = vars(getattr(self, i))
             else:
                 result[i] = asdict[i]

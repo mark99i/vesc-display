@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>479</height>
+    <height>480</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -84,9 +84,9 @@ background: rgba(0,0,0,0.0);</string>
    <widget class="QProgressBar" name="battery_progress_bar">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>410</y>
-      <width>591</width>
+      <width>621</width>
       <height>51</height>
      </rect>
     </property>
@@ -167,9 +167,9 @@ border: none;</string>
    <widget class="QLineEdit" name="date">
     <property name="geometry">
      <rect>
-      <x>40</x>
+      <x>10</x>
       <y>0</y>
-      <width>141</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -208,7 +208,7 @@ border: none;</string>
      <rect>
       <x>460</x>
       <y>0</y>
-      <width>141</width>
+      <width>171</width>
       <height>31</height>
      </rect>
     </property>
@@ -245,7 +245,7 @@ border: none;</string>
    <widget class="QLineEdit" name="left_param">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>340</y>
       <width>141</width>
       <height>61</height>
@@ -323,7 +323,7 @@ border: none;</string>
    <widget class="QLineEdit" name="right_param">
     <property name="geometry">
      <rect>
-      <x>470</x>
+      <x>490</x>
       <y>340</y>
       <width>141</width>
       <height>61</height>
@@ -357,73 +357,6 @@ border: none;</string>
     </property>
     <property name="readOnly">
      <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="close_button">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>0</y>
-      <width>41</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::ClickFocus</enum>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: rgb(255, 85, 0);
-border: none;</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="iconSize">
-     <size>
-      <width>48</width>
-      <height>48</height>
-     </size>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="settings_button">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>41</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="cursor">
-     <cursorShape>ArrowCursor</cursorShape>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::ClickFocus</enum>
-    </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: rgb(255, 255, 255);
-border-color: rgb(255, 255, 255);</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="iconSize">
-     <size>
-      <width>48</width>
-      <height>48</height>
-     </size>
     </property>
    </widget>
   </widget>
