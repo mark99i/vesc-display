@@ -154,12 +154,12 @@ class GUISettingsGetSettings(QDialog):
         self.close.setDisabled(True)
 
     def show(self):
-        QTCommunication.run_func_in_background(self, network.Network.COMM_GET_MCCONF, self.on_scan_ended)
+        QTCommunication.run_func_in_background(self, network.Network.COMM_GET_MCCONF, self.on_get_mcconf_ended)
         super().show()
 
-    def on_scan_ended(self, data: dict):
-        self.close.setDisabled(False)
+    def on_get_mcconf_ended(self, data: dict):
         if data is None:
+            self.close.setDisabled(False)
             self.textv.setText("command error or unsupported!")
             return
 
@@ -170,7 +170,24 @@ class GUISettingsGetSettings(QDialog):
         Config.wheel_diameter = int(mcconf["si_wheel_diameter"] * 1000)
         Config.save()
         Battery.recalc_full_battery_wh()
-        self.textv.setText("command complete!")
+
+        self.textv.setText("searching second esc-id... please wait")
+        QTCommunication.run_func_in_background(self, network.Network.COMM_PING_CAN, self.on_scan_can_ended)
+
+    def on_scan_can_ended(self, data: dict):
+        self.close.setDisabled(False)
+        if data is None:
+            self.textv.setText("mcconf readed success, scan can error!")
+            return
+
+        vescs_in_bus: list = data["-1"]['vesc_on_bus']
+        if len(vescs_in_bus) == 0:
+            self.textv.setText("mcconf readed success, scan can not found second esc!")
+            return
+
+        Config.esc_b_id = vescs_in_bus[0]
+        self.textv.setText("complete!")
+        pass
 
     def click_cancel(self):
         self.hide()
@@ -212,7 +229,7 @@ class GUISettings:
     def reload_list(self):
         self.opened_change_val = False
         self.list_model.removeRows(0, self.list_model.rowCount())
-        self.list_model.appendRow(self.get_list_item("get battery and motor from vesc"))
+        self.list_model.appendRow(self.get_list_item("get configuration from vesc"))
         self.list_model.appendRow(self.get_list_item(f"modify odometer [{round(Config.odometer_distance_km_backup, 2)}]", disabled=True))
         self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
         conf = Config.get_as_dict()
@@ -279,7 +296,7 @@ class GUISettings:
             self.open_int_mod(parameter_name, 100, 4000, 100000)
         elif parameter_name == "battery_cells":
             self.open_int_mod(parameter_name, 1, 0, 25)
-        elif parameter_name == "get battery and motor from vesc":
+        elif parameter_name == "get configuration from vesc":
             self.open_get_battery_motor_from_vesc()
         elif parameter_name.startswith("modify odometer "):
             self.open_int_mod("_odometer", 50, 0, 100000)

@@ -47,17 +47,23 @@ class Network:
             return False
 
     @staticmethod
-    def scan_can() -> list:
+    def COMM_PING_CAN() -> list:
         try:
-            content = Network.session.get(f"{Config.serial_vesc_api}/vesc/local/can/scan", timeout=30).content
-            answ = json.loads(content)
+            data = json.dumps({"vesc_ids": [-1]})
+            response = Network.http.request("POST", f"{Config.serial_vesc_api}/vescs/command/COMM_PING_CAN",
+                                            headers={'Content-Type': 'application/json'},
+                                            body=data, timeout=Network.net_timeout + 6)
+            if response.status != 200:
+                return None
+
+            answ = json.loads(response.data)
 
             if answ["success"]:
-                return answ["vesc_ids_on_bus"]
+                return answ["data"]
             else:
-                return []
+                return None
         except:
-            return []
+            return None
 
     @staticmethod
     def COMM_GET_VALUES_multi(controller_ids: list) -> dict:
