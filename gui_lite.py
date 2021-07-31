@@ -18,7 +18,7 @@ from gui_state import GUIState
 from service_status import GUIServiceState
 
 class GUIApp:
-    app: QApplication = None
+    starter = None
     ui: QMainWindow = None
 
     settings: GUISettings = None
@@ -53,12 +53,13 @@ class GUIApp:
     last_menu_event: QMouseEvent = None
     last_uart_status = ""
 
-    def __init__(self):
-        self.app = QApplication([])
+    def __init__(self, starter):
+        from main import Starter
+        self.starter: Starter = starter
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_lite_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
-        self.settings = GUISettings()
+        self.settings = GUISettings(self)
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
         self.main_menu = GUIMainMenu(self)
@@ -89,7 +90,6 @@ class GUIApp:
 
     def show(self):
         self.ui.show()
-        self.app.exec()
 
     def on_click_lcd(self, event: QMouseEvent):
         self.main_menu.show()

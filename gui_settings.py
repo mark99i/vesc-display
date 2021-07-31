@@ -178,6 +178,7 @@ class GUISettingsGetSettings(QDialog):
         pass
 
 class GUISettings:
+    parent = None
     ui: QMainWindow = None
 
     list_view: QListView = None
@@ -187,7 +188,8 @@ class GUISettings:
 
     opened_change_val = False
 
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/settings_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
@@ -218,7 +220,6 @@ class GUISettings:
             if name in Config.invisible_in_settings_options: continue
             self.list_model.appendRow(self.get_list_item(f"{name}:\n\t{conf.get(name)}"))
         self.list_model.appendRow(self.get_list_item("-----------------", disabled=True))
-        self.list_model.appendRow(self.get_list_item("restart application"))
 
     def open_int_mod(self, parameter, step, val_min, val_max):
         self.opened_change_val = True
@@ -282,9 +283,6 @@ class GUISettings:
             self.open_get_battery_motor_from_vesc()
         elif parameter_name.startswith("modify odometer "):
             self.open_int_mod("_odometer", 50, 0, 100000)
-        elif parameter_name == "restart application":
-            UtilsHolder.need_restart_app = True
-            QApplication.exit(0)
 
     def show(self):
         self.reload_list()
@@ -292,6 +290,16 @@ class GUISettings:
 
     def close_settings(self):
         self.ui.close()
-        pass
+
+        from gui import GUIApp as NormalApp
+        from gui_lite import GUIApp as LiteApp
+
+        if type(self.parent) == NormalApp and Config.use_gui_lite:
+            self.parent.starter.restart_gui()
+            return
+
+        if type(self.parent) == LiteApp and not Config.use_gui_lite:
+            self.parent.starter.restart_gui()
+            return
 
     pass

@@ -44,7 +44,7 @@ class GUISession:
     def update_text_stats(self):
         data_updater_thread = self.parent.data_updater_thread
         # from gui_state import GUIState
-        # state: GUIState = data_updater_thread.state
+        # state: GUIState = worker_thread.state
         state = data_updater_thread.state
         watt_h_used = int(state.esc_a_state.watt_hours_used + state.esc_b_state.watt_hours_used)
 

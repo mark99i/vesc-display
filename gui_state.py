@@ -80,7 +80,6 @@ class SessionInfo:
                     content = json.dumps(self.f_get_json(), indent=4)
                     fp.write(content)
                     os.fsync(fp)
-                    print(content)
                 time.sleep(30)
             except: pass
 

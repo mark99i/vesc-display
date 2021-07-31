@@ -28,6 +28,7 @@ class WorkerThread(Thread):
 
     def __init__(self):
         Thread.__init__(self)
+        self.name = "data_updater"
 
     def setup(self):
         Odometer.load()
