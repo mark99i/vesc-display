@@ -78,6 +78,20 @@ class Network:
         except:
             return None
 
+    @staticmethod
+    def COMM_REBOOT(controller_ids: list) -> bool:
+        try:
+            data = json.dumps({"vesc_ids": controller_ids})
+            response = Network.http.request("POST", f"{Config.serial_vesc_api}/vescs/command/COMM_REBOOT",
+                                            headers={'Content-Type': 'application/json'},
+                                            body=data, timeout=Network.net_timeout + 7)
+            if response.status != 200:
+                return False
+
+            return True
+        except:
+            return False
+
 
     @staticmethod
     def COMM_FW_VERSION(controller_id: int = -1) -> dict:
