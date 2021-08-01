@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication
 from data_updater import WorkerThread
 from gui import GUIApp as GUIApp
 from gui_lite import GUIApp as GUIAppLite
-from utils import GUIAppComm, get_script_dir, UtilsHolder
+from utils import GUIAppComm, get_script_dir
 from config import Config
 
 class Starter:
@@ -28,6 +28,8 @@ class Starter:
             os.mkdir(get_script_dir(False) + "/configs")
         if not os.path.isdir(get_script_dir(False) + "/logs"):
             os.mkdir(get_script_dir(False) + "/logs")
+        if not os.path.isdir(get_script_dir(False) + "/sessions"):
+            os.mkdir(get_script_dir(False) + "/sessions")
 
         print("loading config ... ", end='')
         try:

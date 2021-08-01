@@ -217,6 +217,29 @@ border: none;</string>
     <string>force switch</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="reset_button">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>10</y>
+     <width>101</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(0, 120, 0);
+border: none;</string>
+   </property>
+   <property name="text">
+    <string>reset</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

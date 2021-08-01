@@ -134,7 +134,7 @@ class QTCommunication:
                 if " positional argument" in str(e):
                     result = self.worker()
                 else:
-                    print("bg exc:",e)
+                    print("bg exc:", e)
                     raise e
             self.finish_signal.emit(result)
             return
