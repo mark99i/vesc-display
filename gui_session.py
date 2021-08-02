@@ -80,6 +80,7 @@ class GUISession:
                 self.parent: GUISession = self.parent
                 self.parent.parent.data_updater_thread.state.reset_session()
                 self.parent.update_text_stats()
+                Battery.display_start_voltage = 0
             else:
                 self.textv.setText("command error!")
 
