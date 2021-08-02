@@ -187,6 +187,7 @@ class GUISettingsGetSettings(QDialog):
 
         Config.esc_b_id = vescs_in_bus[0]
         self.textv.setText("complete!")
+        Config.save()
         pass
 
     def click_cancel(self):
