@@ -39,6 +39,12 @@ class SessionInfo:
             self.average_speed = round(self.__av_speed_calc_sum / self.__av_speed_calc_count, 2)
             self.maximum_speed = round(max(self.maximum_speed, state.speed), 2)
 
+            battery_current = state.esc_a_state.battery_current + state.esc_b_state.battery_current
+            self.__av_battery_current_calc_sum += battery_current
+            self.__av_battery_current_calc_count += 1
+            self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
+            self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
+
             self.speed_session_history.append(state.speed)
             self.power_session_history.append(state.full_power)
             self.battery_session_history.append(state.battery_percent)
@@ -54,12 +60,6 @@ class SessionInfo:
         phase_current = state.esc_a_state.phase_current + state.esc_b_state.phase_current
         self.minimum_phase_current = min(self.minimum_phase_current, phase_current)
         self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
-
-        battery_current = state.esc_a_state.battery_current + state.esc_b_state.battery_current
-        self.__av_battery_current_calc_sum += battery_current
-        self.__av_battery_current_calc_count += 1
-        self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
-        self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
 
     def f_get_json(self) -> dict:
         result = {}

@@ -59,6 +59,8 @@ class GUISession:
 
         def show(self):
             QTCommunication.run_func_in_background(self, self.bg_restart_vescs, self.on_restart_ended)
+            self.textv.setText("restarting vesc... please wait (5-10sec)")
+            self.textv.setDisabled(False)
             super().show()
 
         def bg_restart_vescs(self, args):
@@ -80,6 +82,7 @@ class GUISession:
                 self.parent: GUISession = self.parent
                 self.parent.parent.data_updater_thread.state.reset_session()
                 self.parent.update_text_stats()
+                Battery.display_start_voltage = 0
             else:
                 self.textv.setText("command error!")
 
