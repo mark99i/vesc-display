@@ -115,7 +115,6 @@ class GUIApp:
     def on_click_battery(self, event: QMouseEvent):
         self.session_info.show()
 
-
     def callback_update_gui(self, state: GUIState):
         if self.speed_logic.ui.isVisible():
             self.speed_logic.update_speed(state)
