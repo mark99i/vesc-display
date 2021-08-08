@@ -119,8 +119,11 @@ class Network:
     def COMM_GET_MCCONF(controller_id: int = -1) -> dict:
         try:
             if controller_id is None: controller_id = -1
-            content = Network.session.get(f"{Config.serial_vesc_api}/vescs/command/COMM_GET_MCCONF?vesc_id={controller_id}",
-                                          timeout=Network.net_timeout + 500).content
+
+            js = {"vesc_ids": [controller_id]}
+            content = Network.session.post(f"{Config.serial_vesc_api}/vescs/command/COMM_GET_MCCONF",
+                                           headers={'Content-Type': 'application/json'}, json=js,
+                                           timeout=Network.net_timeout + 5).content
             answ = json.loads(content)
 
             if answ["success"]:
