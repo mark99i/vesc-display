@@ -3,15 +3,16 @@ import time
 # noinspection PyUnresolvedReferences
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QPixmap, QMouseEvent
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QLineEdit, QMenu, QAction, QProgressBar
+from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QLineEdit, QMenu, QAction, QProgressBar
 
 import data_updater
 from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
 from gui_speed_logic import GUISpeedLogic
 from nsec_calculation import NSec
-from utils import ButtonPos, ParamIndicators, get_script_dir, get_skin_size_for_display
+from utils import get_script_dir, get_skin_size_for_display
+from indicators_changer import ButtonPos, ParamIndicators, ParamIndicatorsChanger
 from config import Config, Odometer
 from gui_settings import GUISettings
 from gui_state import GUIState
@@ -26,6 +27,8 @@ class GUIApp:
     session_info: GUISession = None
     main_menu: GUIMainMenu = None
     speed_logic: GUISpeedLogic = None
+
+    indicators_changer = None
 
     main_speed_lcd: QLCDNumber = None
 
@@ -64,6 +67,7 @@ class GUIApp:
         self.session_info = GUISession(self)
         self.main_menu = GUIMainMenu(self)
         self.speed_logic = GUISpeedLogic(self)
+        self.indicators_changer = ParamIndicatorsChanger(self)
 
         self.main_speed_lcd = self.ui.main_speed
         self.left_param = self.ui.left_param
@@ -98,86 +102,19 @@ class GUIApp:
         self.service_status.show()
 
     def on_click_right_param(self, event: QMouseEvent):
-        self.show_menu_param_change(event, ButtonPos.RIGHT_PARAM)
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.RIGHT_PARAM)
         pass
 
     def on_click_left_param(self, event: QMouseEvent):
-        self.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
         pass
 
     def on_click_center_param(self, event: QMouseEvent):
-        self.show_menu_param_change(event, ButtonPos.CENTER_PARAM)
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.CENTER_PARAM)
 
     def on_click_battery(self, event: QMouseEvent):
         self.session_info.show()
 
-    def show_menu_param_change(self, event: QMouseEvent, param_position: ButtonPos):
-        menu = QMenu(self.ui)
-        menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
-
-        actions = []
-        if param_position == ButtonPos.LEFT_PARAM or param_position == ButtonPos.RIGHT_PARAM or param_position == ButtonPos.CENTER_PARAM:
-            for indicator in [i for i in ParamIndicators]:
-                name: str = indicator.name
-                if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
-                    name = "✔ " + name
-                if param_position == ButtonPos.CENTER_PARAM and self.right_param_active_ind == indicator:
-                    name = "✔ " + name
-                if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
-                    name = "✔ " + name
-                action = QAction()
-                action.setData(param_position)
-                action.setText(name)
-                actions.append(action)
-
-        self.last_menu_event = event
-        menu.triggered.connect(self.menu_param_choosen)
-        menu.addActions(actions)
-        menu.exec(event.globalPos())
-
-    def menu_param_choosen(self, action: QAction):
-        choosen_item = action.text()
-        param_pos = action.data()
-        if " " in choosen_item: return
-
-        print("set", choosen_item, "to", param_pos)
-
-        if choosen_item == ParamIndicators.NSec.name:
-            print("choosen nsec!!")
-            menu = QMenu(self.ui)
-            menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
-
-            actions = []
-
-            for indicator in [i for i in NSec.NSecResult.OptionsEnum]:
-                name: str = indicator.name
-                #if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
-                #    name = "✔ " + name
-                #if param_position == ButtonPos.CENTER_PARAM and self.right_param_active_ind == indicator:
-                #    name = "✔ " + name
-                #if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
-                #    name = "✔ " + name
-                action = QAction()
-                #action.setData(param_position)
-                action.setText(name)
-                actions.append(action)
-
-            menu.addActions(actions)
-            menu.exec(self.last_menu_event.globalPos())
-
-            return
-
-
-        if param_pos == ButtonPos.RIGHT_PARAM:
-            self.right_param_active_ind = ParamIndicators[choosen_item]
-            Config.right_param_active_ind = ParamIndicators[choosen_item].name
-        if param_pos == ButtonPos.LEFT_PARAM:
-            self.left_param_active_ind = ParamIndicators[choosen_item]
-            Config.left_param_active_ind = ParamIndicators[choosen_item].name
-        if param_pos == ButtonPos.CENTER_PARAM:
-            self.center_param_active_ind = ParamIndicators[choosen_item]
-            Config.center_param_active_ind = ParamIndicators[choosen_item].name
-        Config.save()
 
     def callback_update_gui(self, state: GUIState):
         if self.speed_logic.ui.isVisible():
@@ -192,15 +129,28 @@ class GUIApp:
 
         all_params_values = dict()
         all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(state.session_distance)[:4]
+        all_params_values[1] = str(round(state.session_distance, 2))
         all_params_values[2] = str(int(Odometer.full_odometer))
         all_params_values[3] = str(self.updates_in_sec)
         all_params_values[4] = str(round(state.wh_km, 1))
-        all_params_values[5] = str(round(state.wh_km_Ns, 1))
-        all_params_values[6] = str(state.estimated_battery_distance)[:4]
+        all_params_values[6] = str(round(state.estimated_battery_distance, 1))
         all_params_values[7] = str(state.wh_km_h)
-        all_params_values[8] = str(round(state.session.average_speed, 1))
-        all_params_values[9] = str(state.full_power)
+        all_params_values[9] = str(state.full_power) + "W"
+        all_params_values[10] = "---"
+
+        nsec: NSec.NSecResult = state.nsec.last_result
+        all_params_values[100] = str(nsec.min_voltage)
+        all_params_values[101] = str(nsec.max_voltage)
+        all_params_values[102] = str(nsec.min_b_current)
+        all_params_values[103] = str(nsec.max_b_current)
+        all_params_values[104] = str(nsec.min_p_current)
+        all_params_values[105] = str(nsec.max_p_current)
+        all_params_values[106] = str(nsec.min_speed)
+        all_params_values[107] = str(nsec.max_speed)
+        all_params_values[108] = str(round(nsec.distance, 2))
+        all_params_values[109] = str(round(nsec.watts_used, 2))
+        all_params_values[110] = str(round(nsec.watts_on_km, 2))
+        all_params_values[111] = str(round(nsec.max_diff_voltage, 2))
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
         self.right_param.setText(all_params_values[self.right_param_active_ind.value])

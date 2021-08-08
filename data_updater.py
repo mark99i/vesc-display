@@ -41,6 +41,7 @@ class WorkerThread(Thread):
             Config.save()
 
         threading.Thread(target=self.state.session.f_autosaving, name="autosaving-session").start()
+        self.state.nsec = self.nsec_calc
 
         status = network.Network.get_uart_status()
         if status is None: self.state.uart_status = GUIState.UART_STATUS_ERROR; return
@@ -157,6 +158,8 @@ class WorkerThread(Thread):
                 state.builded_ts_ms = int(time.time() * 1000)
                 self.state.session.update(state)
 
+                self.nsec_calc.get_value(state)
+
                 # calc indicators
                 if now_distance > 0:
                     state.wh_km = watt_hours_used / now_distance
@@ -164,7 +167,8 @@ class WorkerThread(Thread):
                     state.estimated_battery_distance = (Battery.full_battery_wh - watt_hours_used) / state.wh_km
                 else:
                     state.estimated_battery_distance = 0
-                state.wh_km_Ns = self.nsec_calc.get_value(state).watts_on_km
+
+                #state.wh_km_Ns = self.state.nsec.last_result.watts_on_km
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)

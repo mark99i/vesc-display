@@ -63,6 +63,7 @@ class Config:
             for i in conf_dict.keys():
                 if hasattr(Config, i):
                     setattr(Config, i, conf_dict[i])
+        Config.filter_button_parameter()
 
     @staticmethod
     def save():
@@ -76,10 +77,24 @@ class Config:
         conf_dict = {}
         for i in Config.__dict__.keys():
             i = str(i)
-            if i.startswith("__") or i == "load" or i == "save" or i == "get_as_dict" or i == "invisible_in_settings_options":
+            if i.startswith("__") or i == "load" or i == "save" or i == "get_as_dict" or i == "invisible_in_settings_options" or i == "filter_button_parameter":
                 continue
             conf_dict[i] = Config.__dict__[i]
         return conf_dict
+
+    @staticmethod
+    def filter_button_parameter():
+        from indicators_changer import ParamIndicators
+
+        try: ParamIndicators[Config.left_param_active_ind]
+        except: Config.left_param_active_ind = ParamIndicators.SessionDistance.name
+
+        try: ParamIndicators[Config.center_param_active_ind]
+        except: Config.center_param_active_ind = ParamIndicators.SessionDistance.name
+
+        try: ParamIndicators[Config.right_param_active_ind]
+        except: Config.right_param_active_ind = ParamIndicators.SessionDistance.name
+
 
 class Odometer:
     __autosaving_enabled = True

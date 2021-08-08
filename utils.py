@@ -3,31 +3,12 @@ import os
 import sys
 import subprocess
 import time
-from enum import Enum
 from screeninfo import get_monitors
 
 from PyQt5.QtChart import QChart, QLineSeries, QValueAxis
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, pyqtSlot
 from PyQt5.QtGui import QPen, QColor
 
-
-class ButtonPos(Enum):
-    RIGHT_PARAM = "right_param"
-    LEFT_PARAM = "left_param"
-    CENTER_PARAM = "center_param"
-
-class ParamIndicators(Enum):
-    BatteryPercent = 0
-    SessionDistance = 1
-    Odometer = 2
-    UpdatesPerSecond = 3
-    WhKm = 4
-    WhKmInNSec = 5
-    BatteryEstDistance = 6
-    WhKmH = 7
-    AverageSpeed = 8
-    FullPower = 9
-    # NSec = 10
 
 class UtilsHolder:
     chart_power_pen = None
