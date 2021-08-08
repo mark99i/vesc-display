@@ -142,30 +142,30 @@ class GUIApp:
 
         print("set", choosen_item, "to", param_pos)
 
-        if choosen_item == ParamIndicators.NSec.name:
-            print("choosen nsec!!")
-            menu = QMenu(self.ui)
-            menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
+#        if choosen_item == ParamIndicators.NSec.name:
+#            print("choosen nsec!!")
+#            menu = QMenu(self.ui)
+#            menu.setStyleSheet('color: rgb(255, 255, 255);font: 22pt "Consolas"; font-weight: bold; border-style: outset; border-width: 2px; border-color: beige;')
 
-            actions = []
+#            actions = []
 
-            for indicator in [i for i in NSec.NSecResult.OptionsEnum]:
-                name: str = indicator.name
+#            for indicator in [i for i in NSec.NSecResult.OptionsEnum]:
+#                name: str = indicator.name
                 #if param_position == ButtonPos.LEFT_PARAM and self.left_param_active_ind == indicator:
                 #    name = "✔ " + name
                 #if param_position == ButtonPos.CENTER_PARAM and self.right_param_active_ind == indicator:
                 #    name = "✔ " + name
                 #if param_position == ButtonPos.RIGHT_PARAM and self.right_param_active_ind == indicator:
                 #    name = "✔ " + name
-                action = QAction()
+#                action = QAction()
                 #action.setData(param_position)
-                action.setText(name)
-                actions.append(action)
+#                action.setText(name)
+#                actions.append(action)
 
-            menu.addActions(actions)
-            menu.exec(self.last_menu_event.globalPos())
+#            menu.addActions(actions)
+#            menu.exec(self.last_menu_event.globalPos())
 
-            return
+#            return
 
 
         if param_pos == ButtonPos.RIGHT_PARAM:
