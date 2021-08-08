@@ -79,7 +79,6 @@ class GUIState:
     battery_percent: int = 0
 
     wh_km: float = 0.0
-    wh_km_Ns: float = 0.0
     wh_km_h: float = 0.0
 
     nsec = None
@@ -111,11 +110,11 @@ class GUIState:
         asdict = dict((name, getattr(self, name)) for name in dir(self))
         for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "session" or i == "reset_session":
+            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "session" or i == "reset_session" or i == "nsec":
                 # TODO: make save nsec results to log
                 continue
 
-            if i.startswith("esc_") or i == "nsec" :
+            if   i.startswith("esc_"):
                 result[i] = vars(getattr(self, i))
             else:
                 result[i] = asdict[i]
