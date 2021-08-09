@@ -4,16 +4,15 @@ import time
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QLineEdit, QMenu, QAction, QProgressBar
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QLineEdit, QProgressBar
 
 import data_updater
 from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
 from gui_speed_logic import GUISpeedLogic
-from nsec_calculation import NSec
 from utils import get_script_dir, get_skin_size_for_display
 from indicators_changer import ButtonPos, ParamIndicators, ParamIndicatorsChanger
-from config import Config, Odometer
+from config import Config
 from gui_settings import GUISettings
 from gui_state import GUIState
 from service_status import GUIServiceState
@@ -83,7 +82,7 @@ class GUIApp:
 
         self.right_param_active_ind = ParamIndicators[Config.right_param_active_ind]
         self.left_param_active_ind = ParamIndicators[Config.left_param_active_ind]
-        self.center_param_active_ind = ParamIndicators[Config.left_param_active_ind]
+        self.center_param_active_ind = ParamIndicators[Config.center_param_active_ind]
 
         self.uart_button = self.ui.uart_button
         self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);") # pink
@@ -126,30 +125,7 @@ class GUIApp:
         self.main_speed_lcd.display(str(round(state.speed, 1)))
         self.battery_progress_bar.setValue(state.battery_percent)
 
-        all_params_values = dict()
-        all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(round(state.session_distance, 2))
-        all_params_values[2] = str(int(Odometer.full_odometer))
-        all_params_values[3] = str(self.updates_in_sec)
-        all_params_values[4] = str(round(state.wh_km, 1))
-        all_params_values[6] = str(round(state.estimated_battery_distance, 1))
-        all_params_values[7] = str(state.wh_km_h)
-        all_params_values[9] = str(state.full_power) + "W"
-        all_params_values[10] = "---"
-
-        nsec: NSec.NSecResult = state.nsec.last_result
-        all_params_values[100] = str(nsec.min_voltage)
-        all_params_values[101] = str(nsec.max_voltage)
-        all_params_values[102] = str(nsec.min_b_current)
-        all_params_values[103] = str(nsec.max_b_current)
-        all_params_values[104] = str(nsec.min_p_current)
-        all_params_values[105] = str(nsec.max_p_current)
-        all_params_values[106] = str(nsec.min_speed)
-        all_params_values[107] = str(nsec.max_speed)
-        all_params_values[108] = str(round(nsec.distance, 2))
-        all_params_values[109] = str(round(nsec.watts_used, 2))
-        all_params_values[110] = str(round(nsec.watts_on_km, 2))
-        all_params_values[111] = str(round(nsec.max_diff_voltage, 2))
+        all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
         self.right_param.setText(all_params_values[self.right_param_active_ind.value])
@@ -170,7 +146,6 @@ class GUIApp:
             elif state.uart_status == GUIState.UART_STATUS_UNKNOWN:
                 self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);border: none;") # pink
             self.last_uart_status = state.uart_status
-
 
         self.calculation_updates_in_sec += 1
         if now_time_ms - self.last_time_check_updates_in_sec > 1000:
