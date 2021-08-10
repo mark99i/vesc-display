@@ -1,9 +1,4 @@
 # noinspection PyUnresolvedReferences
-import threading
-
-# noinspection PyUnresolvedReferences
-import time
-
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -80,7 +75,7 @@ class GUISession:
                 self.textv.setText("reset completed!")
 
                 self.parent: GUISession = self.parent
-                self.parent.parent.data_updater_thread.state.reset_session()
+                self.parent.parent.data_updater_thread.sessions_manager.start_new_session()
                 self.parent.update_text_stats()
                 Battery.display_start_voltage = 0
             else:

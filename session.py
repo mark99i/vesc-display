@@ -6,7 +6,7 @@ import utils
 
 
 
-class SessionInfo:
+class Session:
     average_speed: float = 0
     maximum_speed: float = 0
     minimum_power: float = 0
@@ -29,6 +29,9 @@ class SessionInfo:
     power_session_history: list = list()
     battery_session_history: list = list()
     ts_session_history: list = list()
+
+    ts_start: int = 0
+    ts_end: int = 0
 
     def update(self, state):
         # from gui_state import GUIState
@@ -76,13 +79,3 @@ class SessionInfo:
     def f_parse_from_log(self, js: dict):
         for i in js.keys():
             setattr(self, i, js[i])
-
-    def f_autosaving(self):
-        while True:
-            try:
-                with open(utils.get_script_dir() + "/configs/session_last.json", "w") as fp:
-                    content = json.dumps(self.f_get_json(), indent=4)
-                    fp.write(content)
-                    os.fsync(fp)
-                time.sleep(30)
-            except: pass

@@ -5,6 +5,7 @@ from threading import Thread
 
 import network
 from nsec_calculation import NSec
+from sessions_manager import SessionManager
 from utils import distance_km_from_tachometer, stab
 from battery import Battery
 from config import Config, Odometer
@@ -25,6 +26,7 @@ class WorkerThread(Thread):
     nsec_calc = NSec()
     state = GUIState()
     log = SessionLog()
+    sessions_manager = SessionManager()
 
     def __init__(self):
         Thread.__init__(self)
@@ -40,8 +42,9 @@ class WorkerThread(Thread):
             Config.odometer_distance_km_backup = Odometer.full_odometer
             Config.save()
 
-        threading.Thread(target=self.state.session.f_autosaving, name="autosaving-session").start()
+        self.sessions_manager.resume_old_session()
         self.state.nsec = self.nsec_calc
+        self.state.session = self.sessions_manager.now_session
 
         status = network.Network.get_uart_status()
         if status is None: self.state.uart_status = GUIState.UART_STATUS_ERROR; return
@@ -141,11 +144,8 @@ class WorkerThread(Thread):
                 # adding session to odometer and clear session distance if now_distance > Odometer.session
                 now_distance = distance_km_from_tachometer(state.esc_a_state.tachometer)
                 if now_distance < Odometer.session_mileage:
-                    Odometer.full_odometer += Odometer.session_mileage
-                    Odometer.session_mileage = 0
-                    Config.odometer_distance_km_backup = Odometer.full_odometer
-                    Config.save()
-                    Odometer.save()
+                    self.sessions_manager.start_new_session()
+
                 Odometer.session_mileage = now_distance
                 state.session_distance = now_distance
 

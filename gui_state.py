@@ -1,5 +1,5 @@
 from config import Config
-from sessions import SessionInfo
+from session import Session
 
 class ESCState:
     def __init__(self, controller_a_b: str):
@@ -82,7 +82,7 @@ class GUIState:
     wh_km_h: float = 0.0
 
     nsec = None
-    session = SessionInfo()
+    session = Session()
 
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
@@ -100,9 +100,6 @@ class GUIState:
         self.esc_a_state = ESCState("?")
         self.esc_b_state = ESCState("?")
         self.uart_status = GUIState.UART_STATUS_UNKNOWN
-
-    def reset_session(self):
-        self.session = SessionInfo()
 
     def get_json_for_log(self) -> dict:
         result = {}

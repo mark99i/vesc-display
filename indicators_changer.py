@@ -50,7 +50,7 @@ class ParamIndicatorsChanger:
     def get_indicators_by_state(self, gui, state) -> dict:
         all_params_values = dict()
         all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(round(state.session_distance, 2))
+        all_params_values[1] = str(round(state.session_distance, 1))
         all_params_values[3] = str(gui.updates_in_sec)
         all_params_values[6] = str(round(state.estimated_battery_distance, 1))
         all_params_values[7] = str(state.wh_km_h)
