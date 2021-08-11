@@ -3,7 +3,7 @@ import os
 import time
 
 import utils
-
+from battery import Battery
 
 
 class Session:
@@ -32,6 +32,9 @@ class Session:
 
     ts_start: int = 0
     ts_end: int = 0
+
+    battery_tracking_enabled: bool = False
+    battery_display_start_voltage: float = 0.0
 
     def update(self, state):
         # from gui_state import GUIState
@@ -63,6 +66,8 @@ class Session:
         phase_current = state.esc_a_state.phase_current + state.esc_b_state.phase_current
         self.minimum_phase_current = min(self.minimum_phase_current, phase_current)
         self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
+
+        self.battery_tracking_enabled = not Battery.full_tracking_disabled
 
     def f_get_json(self) -> dict:
         result = {}

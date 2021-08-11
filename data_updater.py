@@ -43,6 +43,7 @@ class WorkerThread(Thread):
             Config.save()
 
         self.sessions_manager.resume_old_session()
+        self.sessions_manager.start_autosaving()
         self.state.nsec = self.nsec_calc
         self.state.session = self.sessions_manager.now_session
 
@@ -145,6 +146,7 @@ class WorkerThread(Thread):
                 now_distance = distance_km_from_tachometer(state.esc_a_state.tachometer)
                 if now_distance < Odometer.session_mileage:
                     self.sessions_manager.start_new_session()
+                    self.state.session = self.sessions_manager.now_session
 
                 Odometer.session_mileage = now_distance
                 state.session_distance = now_distance

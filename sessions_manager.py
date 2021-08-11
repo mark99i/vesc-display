@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 
+from battery import Battery
 from config import Odometer, Config
 from session import Session
 from utils import get_script_dir
@@ -41,12 +42,15 @@ class SessionManager:
         try:
             content = json.loads(content)
             self.now_session.f_parse_from_log(content)
+            Battery.full_tracking_disabled = not self.now_session.battery_tracking_enabled
+            Battery.display_start_voltage = self.now_session.battery_display_start_voltage
+            Battery.recalc_full_battery_wh()
         except:
             print("cannot parse last session for resume")
             return
 
+    def start_autosaving(self):
         threading.Thread(target=self.session_autosaving, name="autosaving-session").start()
-        pass
 
     def reload_session_list_async(self):
 
