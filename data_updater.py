@@ -36,10 +36,10 @@ class WorkerThread(Thread):
         Odometer.load()
         if Config.odometer_distance_km_backup != Odometer.full_odometer:
             # restore backup from config
-            Odometer.full_odometer = Config.odometer_distance_km_backup
+            Odometer.full_odometer = round(Config.odometer_distance_km_backup, 2)
             Odometer.save()
         else:
-            Config.odometer_distance_km_backup = Odometer.full_odometer
+            Config.odometer_distance_km_backup = round(Odometer.full_odometer, 2)
             Config.save()
 
         self.sessions_manager.resume_old_session()

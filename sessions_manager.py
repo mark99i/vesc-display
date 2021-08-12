@@ -15,7 +15,7 @@ class SessionManager:
     now_session = Session()
 
     def start_new_session(self):
-        Odometer.full_odometer += Odometer.session_mileage
+        Odometer.full_odometer = round(Odometer.full_odometer + Odometer.session_mileage, 2)
         Odometer.session_mileage = 0
         Config.odometer_distance_km_backup = Odometer.full_odometer
         Config.save()
