@@ -20,11 +20,13 @@ class Session:
     maximum_motor_temp: float = 0
     start_session_odometer: float = 0
     end_session_odometer: float = 0
+    watt_hours: float = 0
 
     __av_speed_calc_sum: float = 0
     __av_speed_calc_count: int = 0
     __av_battery_current_calc_sum: float = 0
     __av_battery_current_calc_count: int = 0
+    __ts_last_speed_more_2: int = 0
 
     speed_session_history: list = list()
     power_session_history: list = list()
@@ -52,6 +54,10 @@ class Session:
             self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
             self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
 
+            self.__ts_last_speed_more_2 = int(state.builded_ts_ms / 1000)
+            if self.ts_start == 0:
+                self.ts_start = int(state.builded_ts_ms / 1000)
+
             if Config.write_session_track:
                 self.speed_session_history.append(state.speed)
                 self.power_session_history.append(state.full_power)
@@ -70,6 +76,10 @@ class Session:
         self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
 
         self.battery_tracking_enabled = not Battery.full_tracking_disabled
+        self.watt_hours = state.wh_km
+
+    def f_get_private_params(self):
+        return self.__ts_last_speed_more_2
 
     def f_get_json(self) -> dict:
         result = {}

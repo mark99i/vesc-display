@@ -20,7 +20,7 @@ class SessionManager:
         Config.odometer_distance_km_backup = Odometer.full_odometer
         Config.save()
         Odometer.save()
-        self.now_session.ts_end = int(time.time())
+        self.now_session.ts_end = self.now_session.f_get_private_params()
         self.now_session.end_session_odometer = Odometer.full_odometer
 
         # записывать сессию в файл если она не пустая
@@ -28,7 +28,6 @@ class SessionManager:
             self.write_session_with_ts(self.now_session)
 
         self.now_session = Session()
-        self.now_session.ts_start = int(time.time())
         self.now_session.start_session_odometer = Odometer.full_odometer
         pass
 

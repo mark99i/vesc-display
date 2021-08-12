@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QLis
 import network
 from battery import Battery
 from config import Config, Odometer
+from gui_sessions_history_session import GUISessionFromHistory
 from sessions_manager import SessionManager
 from utils import get_script_dir, get_skin_size_for_display, QTCommunication, UtilsHolder
 
@@ -46,10 +47,10 @@ class GUISessionHistory:
         self.list_view.clicked[QModelIndex].connect(self.clicked_item)
         pass
 
-    def get_list_item(self, text: str, disabled: bool = False):
+    def get_list_item(self, text: str, data = None):
         item = QStandardItem(text)
+        item.setData(data)
         item.setEditable(False)
-        if disabled: item.setEnabled(False)
         return item
 
     def reload_list(self):
@@ -60,17 +61,20 @@ class GUISessionHistory:
             lt = time.localtime(session.ts_start)
             t = time.strftime("%d.%m %H:%M:%S", lt)
             lt = time.localtime(session.ts_end)
-            t += " - " + time.strftime("%d.%m %H:%M:%S", lt)
+            t += " - " + time.strftime("%H:%M:%S", lt)
             dist = round(session.end_session_odometer - session.start_session_odometer, 1)
 
-            full_str = f"{t}\n   ⇋ {dist}km, ∿ {session.average_speed}km/h"
+            # 🚀
+            full_str = f"{t}\n ∿ {dist}km, {session.average_speed}km/h, {session.watt_hours}wh/km\n⁣"
 
-            self.list_model.appendRow(self.get_list_item(full_str))
+            self.list_model.appendRow(self.get_list_item(full_str, session))
 
     def clicked_item(self, s):
         item = self.list_model.itemFromIndex(s)
-        parameter_name = item.text()
-        print("chosen " + parameter_name)
+        session = item.data()
+        print(session)
+        g = GUISessionFromHistory()
+        g.show(session)
 
 
     def show(self):
