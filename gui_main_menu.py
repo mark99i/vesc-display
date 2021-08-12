@@ -67,7 +67,8 @@ class GUIMainMenu:
         pass
 
     def click_session_history(self, ev):
-        #self.ui.close()
+        self.parent.session_history.show()
+        self.ui.close()
         pass
 
     def click_session(self, ev):
