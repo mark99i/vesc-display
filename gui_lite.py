@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QLineEdit, QPr
 import data_updater
 from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
+from gui_sessions_history import GUISessionHistory
 from gui_speed_logic import GUISpeedLogic
 from utils import get_script_dir, get_skin_size_for_display
 from indicators_changer import ButtonPos, ParamIndicators, ParamIndicatorsChanger
@@ -26,6 +27,7 @@ class GUIApp:
     session_info: GUISession = None
     main_menu: GUIMainMenu = None
     speed_logic: GUISpeedLogic = None
+    session_history: GUISessionHistory = None
 
     indicators_changer = None
 
@@ -67,6 +69,7 @@ class GUIApp:
         self.main_menu = GUIMainMenu(self)
         self.speed_logic = GUISpeedLogic(self)
         self.indicators_changer = ParamIndicatorsChanger(self)
+        self.session_history = GUISessionHistory(self)
 
         self.main_speed_lcd = self.ui.main_speed
         self.left_param = self.ui.left_param
