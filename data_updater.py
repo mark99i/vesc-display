@@ -176,7 +176,7 @@ class WorkerThread(Thread):
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
 
                 if Config.write_logs:
-                    self.log.write_state(json.dumps(state.get_json_for_log()))
+                    self.log.write_state(json.dumps(state.f_to_json()))
             else:
                 time.sleep(0.1)
 
@@ -218,7 +218,7 @@ class WorkerThread(Thread):
         self.play_log_state_arr = []
         for item in self.play_log_js_arr:
             state = GUIState()
-            state.parse_from_log(item)
+            state.f_from_json(item)
             self.play_log_state_arr.append(state)
         print("parced")
 
