@@ -175,6 +175,7 @@ class WorkerThread(Thread):
                 if self.calc_dynamic_session_enabled:
                     if self.__dynamic_session_need_clear and state.speed > 4:
                         self.state.dynamic_session = Session()
+                        self.__dynamic_session_need_clear = False
                     if not self.__dynamic_session_need_clear and state.speed < 1:
                         self.__dynamic_session_need_clear = True
                     self.state.dynamic_session.update(state, override_write_session_track=False, dynamic_session=True)

@@ -157,10 +157,9 @@ max power: {state.dynamic_session.maximum_phase_current}A/{state.dynamic_session
             self.speed_logic.update_speed(state)
             return
 
-        if not self.ui.isActiveWindow():
+        if not self.ui.isActiveWindow() and not is_win():
             return
 
-        state.speed = 0.9
         self.main_speed_lcd.display(str(round(state.speed, 1)))
         self.battery_progress_bar.setValue(state.battery_percent)
 
@@ -186,9 +185,9 @@ max power: {state.dynamic_session.maximum_phase_current}A/{state.dynamic_session
                 self.uart_button.setStyleSheet("color: rgb(255, 255, 255);\nbackground-color: rgb(255, 0, 255);border: none;") # pink
             self.last_uart_status = state.uart_status
 
-        if state.speed < 3.5:
+        if state.speed < 5:
             self.session_description.setHidden(False)
-            session_desc_alpha = stab(int(map_ard(state.speed, 3.3, 0.5, 0, 255)), 0, 255)
+            session_desc_alpha = stab(int(map_ard(state.speed, 5, 0.5, 0, 255)), 0, 255)
             self.session_description.setStyleSheet(f"color: rgba(255, 255, 255, {session_desc_alpha}); background: rgba(0,0,0, {stab(session_desc_alpha + 20, 0, 255)});")
             self.upd_session_desc(state)
 
