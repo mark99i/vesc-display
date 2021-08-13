@@ -83,6 +83,7 @@ class GUIState:
 
     nsec = None
     session = Session()
+    dynamic_session = Session()
 
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
@@ -103,6 +104,7 @@ class GUIState:
 
     def f_get_bc(self): return self.esc_a_state.battery_current + self.esc_b_state.battery_current
     def f_get_pc(self): return self.esc_a_state.phase_current + self.esc_b_state.phase_current
+    def f_get_wu(self): return self.esc_a_state.watt_hours_used + self.esc_b_state.watt_hours_used
 
     def f_to_json(self) -> dict:
         result = {}
@@ -110,7 +112,7 @@ class GUIState:
         asdict = dict((name, getattr(self, name)) for name in dir(self))
         for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i.startswith("f_") or i.startswith("UART_") or i == "session" or i == "reset_session" or i == "nsec":
+            if i.startswith("__") or i.startswith("f_") or i.startswith("UART_") or i == "session" or i == "dynamic_session" or i == "reset_session" or i == "nsec":
                 # TODO: make save nsec results to log
                 continue
 

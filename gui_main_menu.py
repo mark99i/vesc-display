@@ -38,9 +38,9 @@ class GUIMainMenu:
         self.i_return.mousePressEvent = self.click_return
 
     @staticmethod
-    def setIcon(widget: QLabel, path: str) -> QLabel:
+    def setIcon(widget: QLabel, path: str, factor: float = 5.3) -> QLabel:
         width =  int(UtilsHolder.resolved_resolution[:UtilsHolder.resolved_resolution.find("x")])
-        size = width / 5.3
+        size = width / factor
         pic = QPixmap(path)
         pic = pic.scaled(QSize(size, size), Qt.KeepAspectRatio)
         widget.setPixmap(pic)

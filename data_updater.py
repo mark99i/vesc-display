@@ -5,6 +5,7 @@ from threading import Thread
 
 import network
 from nsec_calculation import NSec
+from session import Session
 from sessions_manager import SessionManager
 from utils import distance_km_from_tachometer, stab
 from battery import Battery
@@ -22,6 +23,8 @@ class WorkerThread(Thread):
     play_log_time_offset = None
 
     speed_logic_mode_enabled = False
+    calc_dynamic_session_enabled = True
+    __dynamic_session_need_clear = False
 
     nsec_calc = NSec()
     state = GUIState()
@@ -158,8 +161,6 @@ class WorkerThread(Thread):
                 state.battery_percent = Battery.calculate_battery_percent(voltage, watt_hours_used)
 
                 state.builded_ts_ms = int(time.time() * 1000)
-                self.state.session.update(state)
-
                 self.nsec_calc.get_value(state)
 
                 # calc indicators
@@ -170,7 +171,13 @@ class WorkerThread(Thread):
                 else:
                     state.estimated_battery_distance = 0
 
-                #state.wh_km_Ns = self.state.nsec.last_result.watts_on_km
+                self.state.session.update(state)
+                if self.calc_dynamic_session_enabled:
+                    if self.__dynamic_session_need_clear and state.speed > 4:
+                        self.state.dynamic_session = Session()
+                    if not self.__dynamic_session_need_clear and state.speed < 1:
+                        self.__dynamic_session_need_clear = True
+                    self.state.dynamic_session.update(state, override_write_session_track=False, dynamic_session=True)
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)

@@ -14,7 +14,7 @@ from gui_session import GUISession
 from gui_sessions_history import GUISessionHistory
 from gui_speed_logic import GUISpeedLogic
 from utils import get_script_dir, get_skin_size_for_display, setup_empty_chart, \
-    set_chart_series
+    set_chart_series, is_win
 from indicators_changer import ButtonPos, ParamIndicators, ParamIndicatorsChanger
 from config import Config
 from gui_settings import GUISettings
@@ -67,7 +67,8 @@ class GUIApp:
         from main import Starter
         self.starter: Starter = starter
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_{get_skin_size_for_display()}.ui")
-        self.ui.setWindowFlag(Qt.FramelessWindowHint)
+        if not is_win():
+            self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         self.settings = GUISettings(self)
         self.service_status = GUIServiceState(self)

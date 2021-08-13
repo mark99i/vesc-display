@@ -143,6 +143,8 @@ def get_systemd_status(service: str) -> str:
     result = subprocess.check_output(["bash", "-c", cmd])
     return result[:-1].decode()
 
+def is_win() -> bool: return sys.platform == "win32"
+
 def restart_systemd_status(service: str) -> None:
     if sys.platform == "win32":
         return None
