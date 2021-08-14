@@ -5,6 +5,8 @@ from threading import Thread
 
 import network
 from nsec_calculation import NSec
+from session import Session
+from sessions_manager import SessionManager
 from utils import distance_km_from_tachometer, stab
 from battery import Battery
 from config import Config, Odometer
@@ -21,10 +23,13 @@ class WorkerThread(Thread):
     play_log_time_offset = None
 
     speed_logic_mode_enabled = False
+    calc_dynamic_session_enabled = True
+    __dynamic_session_need_clear = False
 
     nsec_calc = NSec()
     state = GUIState()
     log = SessionLog()
+    sessions_manager = SessionManager()
 
     def __init__(self):
         Thread.__init__(self)
@@ -34,14 +39,16 @@ class WorkerThread(Thread):
         Odometer.load()
         if Config.odometer_distance_km_backup != Odometer.full_odometer:
             # restore backup from config
-            Odometer.full_odometer = Config.odometer_distance_km_backup
+            Odometer.full_odometer = round(Config.odometer_distance_km_backup, 2)
             Odometer.save()
         else:
-            Config.odometer_distance_km_backup = Odometer.full_odometer
+            Config.odometer_distance_km_backup = round(Odometer.full_odometer, 2)
             Config.save()
 
-        threading.Thread(target=self.state.session.f_autosaving, name="autosaving-session").start()
+        self.sessions_manager.resume_old_session()
+        self.sessions_manager.start_autosaving()
         self.state.nsec = self.nsec_calc
+        self.state.session = self.sessions_manager.now_session
 
         status = network.Network.get_uart_status()
         if status is None: self.state.uart_status = GUIState.UART_STATUS_ERROR; return
@@ -141,11 +148,9 @@ class WorkerThread(Thread):
                 # adding session to odometer and clear session distance if now_distance > Odometer.session
                 now_distance = distance_km_from_tachometer(state.esc_a_state.tachometer)
                 if now_distance < Odometer.session_mileage:
-                    Odometer.full_odometer += Odometer.session_mileage
-                    Odometer.session_mileage = 0
-                    Config.odometer_distance_km_backup = Odometer.full_odometer
-                    Config.save()
-                    Odometer.save()
+                    self.sessions_manager.start_new_session()
+                    self.state.session = self.sessions_manager.now_session
+
                 Odometer.session_mileage = now_distance
                 state.session_distance = now_distance
 
@@ -156,8 +161,6 @@ class WorkerThread(Thread):
                 state.battery_percent = Battery.calculate_battery_percent(voltage, watt_hours_used)
 
                 state.builded_ts_ms = int(time.time() * 1000)
-                self.state.session.update(state)
-
                 self.nsec_calc.get_value(state)
 
                 # calc indicators
@@ -168,13 +171,20 @@ class WorkerThread(Thread):
                 else:
                     state.estimated_battery_distance = 0
 
-                #state.wh_km_Ns = self.state.nsec.last_result.watts_on_km
+                self.state.session.update(state)
+                if self.calc_dynamic_session_enabled:
+                    if self.__dynamic_session_need_clear and state.speed > 4:
+                        self.state.dynamic_session = Session()
+                        self.__dynamic_session_need_clear = False
+                    if not self.__dynamic_session_need_clear and state.speed < 1:
+                        self.__dynamic_session_need_clear = True
+                    self.state.dynamic_session.update(state, override_write_session_track=False, dynamic_session=True)
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)
 
                 if Config.write_logs:
-                    self.log.write_state(json.dumps(state.get_json_for_log()))
+                    self.log.write_state(json.dumps(state.f_to_json()))
             else:
                 time.sleep(0.1)
 
@@ -216,7 +226,7 @@ class WorkerThread(Thread):
         self.play_log_state_arr = []
         for item in self.play_log_js_arr:
             state = GUIState()
-            state.parse_from_log(item)
+            state.f_from_json(item)
             self.play_log_state_arr.append(state)
         print("parced")
 

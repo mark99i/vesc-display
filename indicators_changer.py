@@ -4,6 +4,7 @@ from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QMenu, QAction
 
 from config import Config
+from nsec_calculation import NSec
 
 
 class ButtonPos(Enum):
@@ -14,13 +15,14 @@ class ButtonPos(Enum):
 class ParamIndicators(Enum):
     BatteryPercent = 0
     SessionDistance = 1
-    Odometer = 2
     UpdatesPerSecond = 3
-    WhKm = 4
     BatteryEstDistance = 6
     WhKmH = 7
     FullPower = 9
     NSec = 10           # not saved in config, only for open menu choose nsec
+    PhaseCurrent = 11
+    BatteryCurrent = 12
+    Voltage = 13
 
     nsec_min_voltage = 100
     nsec_max_voltage = 101
@@ -44,6 +46,35 @@ class ParamIndicatorsChanger:
     def __init__(self, gui):
         self.gui = gui
         self.ui = gui.ui
+
+    def get_indicators_by_state(self, gui, state) -> dict:
+        all_params_values = dict()
+        all_params_values[0] = f"{state.battery_percent}%"
+        all_params_values[1] = str(round(state.session_distance, 1))
+        all_params_values[3] = str(gui.updates_in_sec)
+        all_params_values[6] = str(round(state.estimated_battery_distance, 1))
+        all_params_values[7] = str(state.wh_km_h)
+        all_params_values[9] = f'{state.full_power}W'
+        all_params_values[10] = "---"
+        all_params_values[11] = f'{int(state.esc_a_state.phase_current + state.esc_b_state.phase_current)}A'
+        all_params_values[12] = f'{int(state.esc_a_state.battery_current + state.esc_b_state.battery_current)}A'
+        all_params_values[13] = str(round(state.esc_a_state.voltage, 1))
+
+        #from nsec_calculation import NSec
+        nsec: NSec.NSecResult = state.nsec.last_result
+        all_params_values[100] = str(nsec.min_voltage)
+        all_params_values[101] = str(nsec.max_voltage)
+        all_params_values[102] = str(nsec.min_b_current)
+        all_params_values[103] = str(nsec.max_b_current)
+        all_params_values[104] = str(nsec.min_p_current)
+        all_params_values[105] = str(nsec.max_p_current)
+        all_params_values[106] = str(nsec.min_speed)
+        all_params_values[107] = str(nsec.max_speed)
+        all_params_values[108] = str(round(nsec.distance, 2))
+        all_params_values[109] = str(round(nsec.watts_used, 2))
+        all_params_values[110] = str(round(nsec.watts_on_km, 2))
+        all_params_values[111] = str(round(nsec.max_diff_voltage, 2))
+        return all_params_values
 
     def have_enabled_nsec(self) -> bool:
         from gui import GUIApp as NormalApp
@@ -99,11 +130,11 @@ class ParamIndicatorsChanger:
                 actions.append(action)
 
         self.last_menu_event = event
-        menu.triggered.connect(self.menu_param_choosen)
+        menu.triggered.connect(self.menu_handler_1lvl)
         menu.addActions(actions)
         menu.exec(event.globalPos())
 
-    def menu_param_choosen(self, action: QAction):
+    def menu_handler_1lvl(self, action: QAction):
         choosen_item = action.text()
         param_position = action.data()
         if "NSec" in choosen_item:
@@ -119,7 +150,7 @@ class ParamIndicatorsChanger:
             actions = []
 
             for indicator in [i for i in ParamIndicators]:
-                if indicator.value < 100: continue # non-NSec
+                if indicator.value < 100: continue # hide non-NSec
                 name: str = indicator.name
 
                 if self.is_menu_item_now_using(param_position, indicator):
@@ -131,35 +162,29 @@ class ParamIndicatorsChanger:
                 actions.append(action)
 
             menu.addActions(actions)
-            menu.triggered.connect(self.menu_param_nsec_choosen)
+            menu.triggered.connect(self.menu_handler_2lvl_nsec)
             menu.exec(self.last_menu_event.globalPos())
             return
 
-        if param_position == ButtonPos.RIGHT_PARAM:
-            self.gui.right_param_active_ind = ParamIndicators[choosen_item]
-            Config.right_param_active_ind = ParamIndicators[choosen_item].name
-        if param_position == ButtonPos.LEFT_PARAM:
-            self.gui.left_param_active_ind = ParamIndicators[choosen_item]
-            Config.left_param_active_ind = ParamIndicators[choosen_item].name
-        if param_position == ButtonPos.CENTER_PARAM:
-            self.gui.center_param_active_ind = ParamIndicators[choosen_item]
-            Config.center_param_active_ind = ParamIndicators[choosen_item].name
-        Config.save()
+        self.apply_and_save_indicator(choosen_item, param_position)
 
-    def menu_param_nsec_choosen(self, action: QAction):
+    def menu_handler_2lvl_nsec(self, action: QAction):
         choosen_item = action.text()
         param_position = action.data()
         if " " in choosen_item: return
 
         print("set", choosen_item, "to", param_position)
+        self.apply_and_save_indicator(choosen_item, param_position)
 
-        if param_position == ButtonPos.RIGHT_PARAM:
-            self.gui.right_param_active_ind = ParamIndicators[choosen_item]
-            Config.right_param_active_ind = ParamIndicators[choosen_item].name
-        if param_position == ButtonPos.LEFT_PARAM:
-            self.gui.left_param_active_ind = ParamIndicators[choosen_item]
-            Config.left_param_active_ind = ParamIndicators[choosen_item].name
-        if param_position == ButtonPos.CENTER_PARAM:
-            self.gui.center_param_active_ind = ParamIndicators[choosen_item]
-            Config.center_param_active_ind = ParamIndicators[choosen_item].name
+
+    def apply_and_save_indicator(self, indicator_name, button_pos):
+        if button_pos == ButtonPos.RIGHT_PARAM:
+            self.gui.right_param_active_ind = ParamIndicators[indicator_name]
+            Config.right_param_active_ind = ParamIndicators[indicator_name].name
+        if button_pos == ButtonPos.LEFT_PARAM:
+            self.gui.left_param_active_ind = ParamIndicators[indicator_name]
+            Config.left_param_active_ind = ParamIndicators[indicator_name].name
+        if button_pos == ButtonPos.CENTER_PARAM:
+            self.gui.center_param_active_ind = ParamIndicators[indicator_name]
+            Config.center_param_active_ind = ParamIndicators[indicator_name].name
         Config.save()

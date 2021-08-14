@@ -5,18 +5,18 @@ from PyQt5 import uic
 from PyQt5.QtChart import QChart, QChartView
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QMouseEvent
-from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QApplication, QPlainTextEdit, QLineEdit, \
-    QTextEdit, QMenu, QAction
+from PyQt5.QtWidgets import QLCDNumber, QPushButton, QMainWindow, QPlainTextEdit, QLineEdit, \
+    QTextEdit
 
 import data_updater
 from gui_main_menu import GUIMainMenu
 from gui_session import GUISession
+from gui_sessions_history import GUISessionHistory
 from gui_speed_logic import GUISpeedLogic
-from nsec_calculation import NSec
 from utils import get_script_dir, get_skin_size_for_display, setup_empty_chart, \
-    set_chart_series
+    set_chart_series, is_win
 from indicators_changer import ButtonPos, ParamIndicators, ParamIndicatorsChanger
-from config import Config, Odometer
+from config import Config
 from gui_settings import GUISettings
 from gui_state import GUIState
 from service_status import GUIServiceState
@@ -30,6 +30,7 @@ class GUIApp:
     service_status: GUIServiceState = None
     session_info: GUISession = None
     speed_logic: GUISpeedLogic = None
+    session_history: GUISessionHistory = None
 
     indicators_changer = None
 
@@ -66,13 +67,15 @@ class GUIApp:
         from main import Starter
         self.starter: Starter = starter
         self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/main_window_{get_skin_size_for_display()}.ui")
-        self.ui.setWindowFlag(Qt.FramelessWindowHint)
+        if not is_win():
+            self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
         self.settings = GUISettings(self)
         self.service_status = GUIServiceState(self)
         self.session_info = GUISession(self)
         self.speed_logic = GUISpeedLogic(self)
         self.main_menu = GUIMainMenu(self)
+        self.session_history = GUISessionHistory(self)
 
         self.indicators_changer = ParamIndicatorsChanger(self)
 
@@ -150,30 +153,7 @@ class GUIApp:
 
         self.main_speed_lcd.display(str(round(state.speed, 1)))
 
-        all_params_values = dict()
-        all_params_values[0] = f"{state.battery_percent}%"
-        all_params_values[1] = str(round(state.session_distance, 2))
-        all_params_values[2] = str(round(int(Odometer.full_odometer), 1))
-        all_params_values[3] = str(self.updates_in_sec)
-        all_params_values[4] = str(round(state.wh_km, 1))
-        all_params_values[6] = str(round(state.estimated_battery_distance, 1))
-        all_params_values[7] = str(state.wh_km_h)
-        all_params_values[9] = str(state.full_power) + "W"
-        all_params_values[10] = "---"
-
-        nsec: NSec.NSecResult = state.nsec.last_result
-        all_params_values[100] = str(nsec.min_voltage)
-        all_params_values[101] = str(nsec.max_voltage)
-        all_params_values[102] = str(nsec.min_b_current)
-        all_params_values[103] = str(nsec.max_b_current)
-        all_params_values[104] = str(nsec.min_p_current)
-        all_params_values[105] = str(nsec.max_p_current)
-        all_params_values[106] = str(nsec.min_speed)
-        all_params_values[107] = str(nsec.max_speed)
-        all_params_values[108] = str(round(nsec.distance, 2))
-        all_params_values[109] = str(round(nsec.watts_used, 2))
-        all_params_values[110] = str(round(nsec.watts_on_km, 2))
-        all_params_values[111] = str(round(nsec.max_diff_voltage, 2))
+        all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
 
         self.left_param.setText(all_params_values[self.left_param_active_ind.value])
         self.right_param.setText(all_params_values[self.right_param_active_ind.value])

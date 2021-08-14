@@ -1,5 +1,5 @@
 from config import Config
-from sessions import SessionInfo
+from session import Session
 
 class ESCState:
     def __init__(self, controller_a_b: str):
@@ -82,7 +82,8 @@ class GUIState:
     wh_km_h: float = 0.0
 
     nsec = None
-    session = SessionInfo()
+    session = Session()
+    dynamic_session = Session()
 
     estimated_battery_distance: float = 0.0
     session_distance: float = 0.0
@@ -101,16 +102,17 @@ class GUIState:
         self.esc_b_state = ESCState("?")
         self.uart_status = GUIState.UART_STATUS_UNKNOWN
 
-    def reset_session(self):
-        self.session = SessionInfo()
+    def f_get_bc(self): return self.esc_a_state.battery_current + self.esc_b_state.battery_current
+    def f_get_pc(self): return self.esc_a_state.phase_current + self.esc_b_state.phase_current
+    def f_get_wu(self): return self.esc_a_state.watt_hours_used + self.esc_b_state.watt_hours_used
 
-    def get_json_for_log(self) -> dict:
+    def f_to_json(self) -> dict:
         result = {}
 
         asdict = dict((name, getattr(self, name)) for name in dir(self))
         for i in asdict.keys():
             i = str(i)
-            if i.startswith("__") or i == "get_json_for_log" or i == "parse_from_log" or i.startswith("UART_") or i == "session" or i == "reset_session" or i == "nsec":
+            if i.startswith("__") or i.startswith("f_") or i.startswith("UART_") or i == "session" or i == "dynamic_session" or i == "reset_session" or i == "nsec":
                 # TODO: make save nsec results to log
                 continue
 
@@ -120,7 +122,7 @@ class GUIState:
                 result[i] = asdict[i]
         return result
 
-    def parse_from_log(self, js: dict):
+    def f_from_json(self, js: dict):
         for i in js.keys():
             if i == "esc_a_state":
                 self.esc_a_state.parse_from_log(js[i])

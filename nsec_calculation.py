@@ -46,20 +46,34 @@ class NSec:
         result.distance = nstate.session_distance - removed_state.session_distance
         result.watts_used = full_wattes_used_now - full_wattes_used_removed
 
-        result.min_voltage = round(min(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage, 1)
-        result.max_voltage = round(max(self.states_arr, key=lambda state: state.esc_a_state.voltage).esc_a_state.voltage, 1)
-        result.max_speed = round(max(self.states_arr, key=lambda state: state.speed).speed, 2)
-        result.min_speed = round(min(self.states_arr, key=lambda state: state.speed).speed, 2)
+        min_battery_current_state = nstate
+        max_battery_current_state = nstate
+        min_phase_current_state = nstate
+        max_phase_current_state = nstate
 
-        # получаем state, в котором сумма значений наименьшая/наибольшая
-        min_battery_current_state: GUIState = min(self.states_arr, key=lambda state: (
-                state.esc_a_state.battery_current + state.esc_b_state.battery_current))
-        max_battery_current_state: GUIState = max(self.states_arr, key=lambda state: (
-                state.esc_a_state.battery_current + state.esc_b_state.battery_current))
-        min_phase_current_state: GUIState = min(self.states_arr, key=lambda state: (
-                state.esc_a_state.phase_current + state.esc_b_state.phase_current))
-        max_phase_current_state: GUIState = max(self.states_arr, key=lambda state: (
-                state.esc_a_state.phase_current + state.esc_b_state.phase_current))
+        for state in self.states_arr:
+            state: GUIState
+            result.min_voltage = min(result.min_voltage, state.esc_a_state.voltage)
+            result.max_voltage = max(result.max_voltage, state.esc_a_state.voltage)
+            result.max_speed = max(result.max_speed, state.speed)
+            result.min_speed = min(result.min_speed, state.speed)
+
+            if min_battery_current_state.f_get_bc() > state.f_get_bc():
+                min_battery_current_state = state
+
+            if max_battery_current_state.f_get_bc() < state.f_get_bc():
+                max_battery_current_state = state
+
+            if min_phase_current_state.f_get_pc() > state.f_get_pc():
+                min_phase_current_state = state
+
+            if max_phase_current_state.f_get_pc() < state.f_get_pc():
+                max_phase_current_state = state
+
+        result.max_voltage.__round__(1)
+        result.min_voltage.__round__(1)
+        result.max_speed.__round__(1)
+        result.min_speed.__round__(1)
 
         # если esc_b есть, то берем наименьший, если нет, то просто с A
         if Config.esc_b_id != -1:

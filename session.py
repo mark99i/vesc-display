@@ -3,10 +3,13 @@ import os
 import time
 
 import utils
+from battery import Battery
+from config import Config
 
 
+class Session:
 
-class SessionInfo:
+    distance: float = 0
     average_speed: float = 0
     maximum_speed: float = 0
     minimum_power: float = 0
@@ -19,21 +22,31 @@ class SessionInfo:
     maximum_motor_temp: float = 0
     start_session_odometer: float = 0
     end_session_odometer: float = 0
+    watt_hours: float = 0
 
     __av_speed_calc_sum: float = 0
     __av_speed_calc_count: int = 0
     __av_battery_current_calc_sum: float = 0
     __av_battery_current_calc_count: int = 0
+    __ts_last_speed_more_2: int = 0
+    __dynamic_watts_used_start: float = -1
+    __dynamic_distance_start: float = -1
 
     speed_session_history: list = list()
     power_session_history: list = list()
     battery_session_history: list = list()
     ts_session_history: list = list()
 
-    def update(self, state):
+    ts_start: int = 0
+    ts_end: int = 0
+
+    battery_tracking_enabled: bool = False
+    battery_display_start_voltage: float = 0.0
+
+    def update(self, state, override_write_session_track: bool = None, dynamic_session: bool = False):
         # from gui_state import GUIState
         # state: GUIState = state
-        if state.speed > 2:
+        if state.speed > 4:
             self.__av_speed_calc_sum += state.speed
             self.__av_speed_calc_count += 1
             self.average_speed = round(self.__av_speed_calc_sum / self.__av_speed_calc_count, 2)
@@ -45,10 +58,24 @@ class SessionInfo:
             self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
             self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
 
-            #self.speed_session_history.append(state.speed)
-            #self.power_session_history.append(state.full_power)
-            #self.battery_session_history.append(state.battery_percent)
-            #self.ts_session_history.append(state.builded_ts_ms)
+            self.__ts_last_speed_more_2 = int(state.builded_ts_ms / 1000)
+            if self.ts_start == 0:
+                self.ts_start = int(state.builded_ts_ms / 1000)
+
+            if Config.write_session_track or (override_write_session_track is not None and override_write_session_track):
+                self.speed_session_history.append(state.speed)
+                self.power_session_history.append(state.full_power)
+                self.battery_session_history.append(state.battery_percent)
+                self.ts_session_history.append(state.builded_ts_ms)
+
+        from gui_state import GUIState
+        state: GUIState
+
+        if dynamic_session:
+            if self.__dynamic_watts_used_start == -1:
+                self.__dynamic_watts_used_start = state.f_get_wu()
+            if self.__dynamic_distance_start == -1:
+                self.__dynamic_distance_start = state.session_distance
 
         self.maximum_fet_temp = max(self.maximum_fet_temp,
                                     max(state.esc_a_state.temperature, state.esc_b_state.temperature))
@@ -60,6 +87,22 @@ class SessionInfo:
         phase_current = state.esc_a_state.phase_current + state.esc_b_state.phase_current
         self.minimum_phase_current = min(self.minimum_phase_current, phase_current)
         self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
+
+        self.battery_tracking_enabled = not Battery.full_tracking_disabled
+
+        if dynamic_session:
+            self.distance = state.session_distance - self.__dynamic_distance_start
+            if self.distance != 0:
+                self.watt_hours = (state.f_get_wu() - self.__dynamic_watts_used_start) / self.distance
+            else:
+                self.watt_hours = 0
+        else:
+            self.watt_hours = state.wh_km
+            self.distance = state.session_distance
+
+
+    def f_get_private_params(self):
+        return self.__ts_last_speed_more_2
 
     def f_get_json(self) -> dict:
         result = {}
@@ -76,13 +119,4 @@ class SessionInfo:
     def f_parse_from_log(self, js: dict):
         for i in js.keys():
             setattr(self, i, js[i])
-
-    def f_autosaving(self):
-        while True:
-            try:
-                with open(utils.get_script_dir() + "/configs/session_last.json", "w") as fp:
-                    content = json.dumps(self.f_get_json(), indent=4)
-                    fp.write(content)
-                    os.fsync(fp)
-                time.sleep(30)
-            except: pass
+        return self

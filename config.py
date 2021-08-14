@@ -23,6 +23,9 @@ class Config:
 
     write_logs: int = 0
 
+    write_session: int = 1
+    write_session_track: int = 0
+
     motor_magnets: int = 0
     wheel_diameter: int = 0
     battery_cells: int = 0

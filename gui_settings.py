@@ -208,13 +208,13 @@ class GUISettings:
 
     def __init__(self, parent):
         self.parent = parent
-        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/settings_{get_skin_size_for_display()}.ui")
+        self.ui = uic.loadUi(f"{get_script_dir(False)}/ui.layouts/generic_list_window_{get_skin_size_for_display()}.ui")
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
-        close_button: QPushButton = self.ui.exit_settings
+        close_button: QPushButton = self.ui.b_exit
         close_button.clicked.connect(self.close_settings)
 
-        self.list_view: QListView = self.ui.list_view
+        self.list_view: QListView = self.ui.lv_body
         self.list_model = QStandardItemModel()
         self.list_view.setModel(self.list_model)
 
