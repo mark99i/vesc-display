@@ -25,6 +25,7 @@ class Config:
 
     write_session: int = 1
     write_session_track: int = 0
+    session_track_average_sec: int = 5
 
     motor_magnets: int = 0
     wheel_diameter: int = 0

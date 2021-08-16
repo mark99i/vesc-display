@@ -275,6 +275,12 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "mtemp_insteadof_load":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "write_session":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "write_session_track":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "session_track_average_sec":
+            self.open_int_mod(parameter_name, 1, 5, 60)
         elif parameter_name == "use_gui_lite":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":

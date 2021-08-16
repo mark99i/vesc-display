@@ -28,24 +28,32 @@ class Session:
     __av_speed_calc_count: int = 0
     __av_battery_current_calc_sum: float = 0
     __av_battery_current_calc_count: int = 0
-    __ts_last_speed_more_2: int = 0
     __dynamic_watts_used_start: float = -1
     __dynamic_distance_start: float = -1
 
     speed_session_history: list = list()
     power_session_history: list = list()
-    battery_session_history: list = list()
-    ts_session_history: list = list()
+    distance_session_history: list = list()
+
+    __speed_temp_arr: list = list()
+    __power_temp_arr: list = list()
+    __distn_temp_arr: list = list()
+    __last_time_point_saved_s: int = 0
 
     ts_start: int = 0
     ts_end: int = 0
+    ts_last_speed_more_4: int = 0
 
     battery_tracking_enabled: bool = False
     battery_display_start_voltage: float = 0.0
 
-    def update(self, state, override_write_session_track: bool = None, dynamic_session: bool = False):
+    def update(self, state, dynamic_session: bool = False):
         # from gui_state import GUIState
         # state: GUIState = state
+
+        from gui_state import GUIState
+        state: GUIState
+
         if state.speed > 4:
             self.__av_speed_calc_sum += state.speed
             self.__av_speed_calc_count += 1
@@ -58,18 +66,29 @@ class Session:
             self.average_battery_current = round(self.__av_battery_current_calc_sum / self.__av_battery_current_calc_count, 2)
             self.maximum_battery_current = round(max(self.maximum_battery_current, battery_current), 2)
 
-            self.__ts_last_speed_more_2 = int(state.builded_ts_ms / 1000)
+            now_time_s = int(state.builded_ts_ms / 1000)
+            self.ts_last_speed_more_4 = now_time_s
+
             if self.ts_start == 0:
-                self.ts_start = int(state.builded_ts_ms / 1000)
+                self.ts_start = now_time_s
 
-            if Config.write_session_track or (override_write_session_track is not None and override_write_session_track):
-                self.speed_session_history.append(state.speed)
-                self.power_session_history.append(state.full_power)
-                self.battery_session_history.append(state.battery_percent)
-                self.ts_session_history.append(state.builded_ts_ms)
+            if Config.write_session_track and not dynamic_session:
+                self.__speed_temp_arr.append(state.speed)
+                self.__power_temp_arr.append(state.full_power)
+                self.__distn_temp_arr.append(state.session_distance)
 
-        from gui_state import GUIState
-        state: GUIState
+                if now_time_s - self.__last_time_point_saved_s > Config.session_track_average_sec:
+                    speed_point = sum(self.__speed_temp_arr) / len(self.__speed_temp_arr)
+                    power_point = sum(self.__power_temp_arr) / len(self.__power_temp_arr)
+                    distn_point = sum(self.__distn_temp_arr) / len(self.__distn_temp_arr)
+                    self.speed_session_history.append(speed_point)
+                    self.power_session_history.append(power_point)
+                    self.distance_session_history.append(distn_point)
+                    self.__speed_temp_arr.clear()
+                    self.__power_temp_arr.clear()
+                    self.__distn_temp_arr.clear()
+                    self.__last_time_point_saved_s = now_time_s
+
 
         if dynamic_session:
             if self.__dynamic_watts_used_start == -1:
@@ -102,7 +121,7 @@ class Session:
 
 
     def f_get_private_params(self):
-        return self.__ts_last_speed_more_2
+        return self.ts_last_speed_more_4
 
     def f_get_json(self) -> dict:
         result = {}
