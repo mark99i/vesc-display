@@ -1,7 +1,8 @@
 # noinspection PyUnresolvedReferences
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtChart import QChartView
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPainter
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QDialog, QPlainTextEdit, QTextEdit
 
 from battery import Battery
@@ -18,12 +19,22 @@ class GUISession:
 
     reset_session = None
 
-    le_battery_tracking: QLineEdit = None
     le_stats: QPlainTextEdit = None
 
     b_close: QPushButton = None
     b_reset: QPushButton = None
     b_bt_switch: QPushButton = None
+
+    b_stats: QPushButton = None
+    b_speed: QPushButton = None
+    b_power: QPushButton = None
+
+    chart: QChart = None
+    chartView: QChartView = None
+    chart_axis_y = QValueAxis()
+    chart_axis_x = QValueAxis()
+
+    now_state = "stats"
 
     class GUIResetSession(QDialog):
         parent = None
@@ -93,11 +104,13 @@ class GUISession:
         self.parent: GUIApp = parent
         self.ui.setWindowFlag(Qt.FramelessWindowHint)
 
-        self.le_battery_tracking = self.ui.battery_tracking
         self.le_stats = self.ui.stats
         self.b_close = self.ui.close_button
         self.b_bt_switch = self.ui.bt_switch
         self.b_reset = self.ui.reset_button
+        self.b_stats = self.ui.b_stats
+        self.b_speed = self.ui.b_speed
+        self.b_power = self.ui.b_power
 
         self.b_close.clicked.connect(self.click_close)
         self.b_bt_switch.clicked.connect(self.click_bt_switch)
@@ -105,10 +118,85 @@ class GUISession:
         self.reset_session = GUISession.GUIResetSession(self.ui, self)
         self.b_reset.clicked.connect(self.click_reset)
 
+        self.chartView = self.ui.chart
+        self.chart = self.chartView.chart()
+        setup_empty_chart(self.chart)
+        self.chartView.setRenderHint(QPainter.Antialiasing, False)
+
+        self.b_stats.clicked.connect(self.on_click_stats)
+        self.b_speed.clicked.connect(self.on_click_speed)
+        self.b_power.clicked.connect(self.on_click_power)
 
     def show(self):
         self.ui.show()
-        self.update_text_stats()
+        self.update_session()
+
+    def on_click_stats(self, ev): self.now_state = "stats"; self.update_session()
+    def on_click_speed(self, ev): self.now_state = "speed"; self.update_session()
+    def on_click_power(self, ev): self.now_state = "power"; self.update_session()
+
+    def update_session(self):
+        if self.now_state == "stats":
+            self.chart.setVisible(False)
+            self.le_stats.setVisible(True)
+            self.b_stats.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(255, 0, 200); border: none;")
+            self.b_speed.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+            self.b_power.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+        else:
+            self.chart.setVisible(True)
+            self.le_stats.setVisible(False)
+
+        if self.now_state == "stats":
+            self.update_text_stats()
+
+        sess = self.parent.data_updater_thread.sessions_manager.now_session
+
+        if self.now_state == "speed":
+            self.fill_chart(sess.speed_session_history, sess.distance_session_history)
+            self.b_stats.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+            self.b_speed.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(255, 0, 200); border: none;")
+            self.b_power.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+            pass
+
+        if self.now_state == "power":
+            self.fill_chart(sess.power_session_history, sess.distance_session_history)
+            self.b_stats.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+            self.b_speed.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(85, 0, 0); border: none;")
+            self.b_power.setStyleSheet("color: rgb(255, 255, 255); background-color: rgb(255, 0, 200); border: none;")
+            pass
+
+        if self.ui.isActiveWindow() or self.ui.isVisible():
+            # threading.Timer not working because him execute function not in UI thread
+            QTCommunication.run_func_in_background(self.ui,
+                                                   need_run=lambda: time.sleep(self.AUTOUPDATE_INTERVAL_SEC),
+                                                   callback=self.update_session)
+
+    def fill_chart(self, y: list, x: list):
+        self.chart_axis_y.setLabelsColor(QColor(255, 255, 255, 255))
+        self.chart_axis_x.setLabelsColor(QColor(255, 255, 255, 255))
+
+        chart_pen = QPen()
+        chart_pen.setColor(QColor(255, 255, 255, 255))
+        chart_pen.setWidth(3)
+
+        series = QLineSeries()
+        for i in range(0, len(x)):
+            series.append(x[i], y[i])
+
+        series.setPen(chart_pen)
+
+        self.chart_axis_y.setMax(max(y))
+        self.chart_axis_y.setMin(min(y))
+        self.chart_axis_x.setMax(max(x))
+        self.chart_axis_x.setMin(min(x))
+
+        self.chart.removeAxis(self.chart_axis_x)
+        self.chart.removeAxis(self.chart_axis_y)
+        self.chart.removeAllSeries()
+        self.chart.addSeries(series)
+        self.chart.setAxisY(self.chart_axis_y, series)
+        self.chart.setAxisX(self.chart_axis_x, series)
+
 
     def update_text_stats(self):
         data_updater_thread = self.parent.data_updater_thread
@@ -138,15 +226,8 @@ odometer: {round(Odometer.full_odometer, 2)} km
         self.le_stats.setPlainText(text[1:-1])
         self.update_battery_tracking_state()
 
-        if self.ui.isActiveWindow() or self.ui.isVisible():
-            # threading.Timer not working because him execute function not in UI thread
-            QTCommunication.run_func_in_background(self.ui,
-                                                   need_run=lambda: time.sleep(self.AUTOUPDATE_INTERVAL_SEC),
-                                                   callback=self.update_text_stats)
-        pass
-
     def update_battery_tracking_state(self):
-        self.le_battery_tracking.setText(f"battery full tracking: {not Battery.full_tracking_disabled}")
+        self.b_bt_switch.setText(f"BT: {not Battery.full_tracking_disabled}")
 
     def click_reset(self):
         if not self.reset_session.isVisible():
