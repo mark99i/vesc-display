@@ -108,6 +108,7 @@ class Session:
         self.maximum_phase_current = max(self.maximum_phase_current, phase_current)
 
         self.battery_tracking_enabled = not Battery.full_tracking_disabled
+        self.battery_display_start_voltage = Battery.display_start_voltage
 
         if dynamic_session:
             self.distance = state.session_distance - self.__dynamic_distance_start
