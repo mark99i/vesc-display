@@ -120,7 +120,8 @@ class GUISession:
 
         self.chartView = self.ui.chart
         self.chart = self.chartView.chart()
-        setup_empty_chart(self.chart)
+        self.chart.legend().hide()
+        self.chart.setBackgroundVisible(False)
         self.chartView.setRenderHint(QPainter.Antialiasing, False)
 
         self.b_stats.clicked.connect(self.on_click_stats)
@@ -185,10 +186,16 @@ class GUISession:
 
         series.setPen(chart_pen)
 
-        self.chart_axis_y.setMax(max(y))
-        self.chart_axis_y.setMin(min(y))
-        self.chart_axis_x.setMax(max(x))
-        self.chart_axis_x.setMin(min(x))
+        if len(x) == 0 or len(y) == 0:
+            self.chart_axis_y.setMax(0)
+            self.chart_axis_y.setMin(0)
+            self.chart_axis_x.setMax(0)
+            self.chart_axis_x.setMin(0)
+        else:
+            self.chart_axis_y.setMax(max(y))
+            self.chart_axis_y.setMin(min(y))
+            self.chart_axis_x.setMax(max(x))
+            self.chart_axis_x.setMin(min(x))
 
         self.chart.removeAxis(self.chart_axis_x)
         self.chart.removeAxis(self.chart_axis_y)
