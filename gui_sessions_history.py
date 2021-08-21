@@ -65,7 +65,7 @@ class GUISessionHistory:
             dist = round(session.end_session_odometer - session.start_session_odometer, 1)
 
             # 🚀
-            full_str = f"{t}\n ∿ {dist}km, {session.average_speed}km/h, {session.watt_hours}wh/km\n⁣"
+            full_str = f"{t}\n ∿ {dist}km, {session.average_speed}km/h, {round(session.watt_hours, 1)}wh/km\n⁣"
 
             self.list_model.appendRow(self.get_list_item(full_str, session))
 
