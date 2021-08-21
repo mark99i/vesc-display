@@ -35,8 +35,7 @@ class Config:
     hw_controller_voltage_offset_mv: int = 0
 
     serial_vesc_api: str = "http://127.0.0.1:2002"  # invisible in settings
-    serial_port: str = "/dev/ttyUSB0"
-    serial_speed: int = 115200
+    serial_vesc_path: str = "port:///dev/ttyUSB0?speed=115200"
 
     service_enable_debug: int = 0
     service_rcv_timeout_ms: int = 100
