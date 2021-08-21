@@ -29,6 +29,10 @@ class GUISessionFromHistory:
         self.b_close.clicked.connect(self.click_close)
 
     def show(self, session):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+            return
+
         from session import Session
         session: Session = session
         time_start = time.strftime("%d.%m %H:%M:%S", time.localtime(session.ts_start))

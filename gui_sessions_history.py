@@ -78,6 +78,10 @@ class GUISessionHistory:
 
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+            return
+
         self.sessions_manager = self.parent.data_updater_thread.sessions_manager
         self.list_model.removeRows(0, self.list_model.rowCount())
         QTCommunication.run_func_in_background(self.ui, self.sessions_manager.reload_session_list_async, self.reload_list)

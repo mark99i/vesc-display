@@ -309,6 +309,9 @@ class GUISettings:
             self.open_int_mod("_odometer", 50, 0, 100000)
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+
         self.reload_list()
         self.ui.show()
 

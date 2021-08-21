@@ -64,6 +64,10 @@ class GUISession:
             self.close.setDisabled(True)
 
         def show(self):
+            if self.ui.isVisible():
+                self.ui.window().activateWindow()
+                return
+
             QTCommunication.run_func_in_background(self, self.bg_restart_vescs, self.on_restart_ended)
             self.textv.setText("restarting vesc... please wait (5-10sec)")
             self.textv.setDisabled(False)

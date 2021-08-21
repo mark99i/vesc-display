@@ -73,6 +73,9 @@ class GUISpeedLogic:
         self.le_on70.mousePressEvent = self.click_le_on70
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+
         self.ui.show()
         self.parent.data_updater_thread.speed_logic_mode_enabled = True
         self.lcd_speed.display("0.0")
