@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QPushButton, QMainWindow, QLineEdit, QTextEdit, QLis
 import network
 from battery import Battery
 from config import Config, Odometer
-from gui_sessions_history_session import GUISessionFromHistory
+from gui_session import GUISession
 from sessions_manager import SessionManager
 from utils import get_script_dir, get_skin_size_for_display, QTCommunication, UtilsHolder
 
@@ -18,7 +18,7 @@ from utils import get_script_dir, get_skin_size_for_display, QTCommunication, Ut
 
 class GUISessionHistory:
     parent = None
-    ui: QMainWindow = None
+    ui: QDialog = None
 
     list_view: QListView = None
     list_model: QStandardItemModel = None
@@ -26,6 +26,7 @@ class GUISessionHistory:
     scroller: QScroller = None
 
     sessions_manager: SessionManager = None
+    openned_session_gui: GUISession = None
 
     opened_change_val = False
 
@@ -72,10 +73,11 @@ class GUISessionHistory:
     def clicked_item(self, s):
         item = self.list_model.itemFromIndex(s)
         session = item.data()
-        print(session)
-        g = GUISessionFromHistory()
-        g.show(session)
-
+        if self.openned_session_gui is None:
+            self.openned_session_gui = GUISession(self.ui, session)
+        else:
+            self.openned_session_gui.history_session = session
+        self.openned_session_gui.show()
 
     def show(self):
         if self.ui.isVisible():
