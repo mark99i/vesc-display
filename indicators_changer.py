@@ -23,6 +23,8 @@ class ParamIndicators(Enum):
     PhaseCurrent = 11
     BatteryCurrent = 12
     Voltage = 13
+    ControllerTemp = 14
+    MotorTemp = 15
 
     nsec_min_voltage = 100
     nsec_max_voltage = 101
@@ -59,6 +61,9 @@ class ParamIndicatorsChanger:
         all_params_values[11] = f'{int(state.esc_a_state.phase_current + state.esc_b_state.phase_current)}A'
         all_params_values[12] = f'{int(state.esc_a_state.battery_current + state.esc_b_state.battery_current)}A'
         all_params_values[13] = str(round(state.esc_a_state.voltage, 1))
+        all_params_values[14] = str(round(max(state.esc_a_state.temperature, state.esc_b_state.temperature), 1))
+        all_params_values[15] = str(round(max(state.esc_a_state.motor_temperature, state.esc_b_state.motor_temperature), 1))
+
 
         #from nsec_calculation import NSec
         nsec: NSec.NSecResult = state.nsec.last_result
