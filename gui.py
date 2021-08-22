@@ -160,10 +160,10 @@ class GUIApp:
 
         self.main_speed_lcd.display(speed_str)
 
-        all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
-
-        self.left_param.setText(all_params_values[self.left_param_active_ind.value])
-        self.right_param.setText(all_params_values[self.right_param_active_ind.value])
+        self.indicators_changer.fill_indicators(self, state)
+        #all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
+        #self.left_param.setText(all_params_values[self.left_param_active_ind.value])
+        #self.right_param.setText(all_params_values[self.right_param_active_ind.value])
 
         now_time_ms = int(time.time() * 1000)
 

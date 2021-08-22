@@ -171,11 +171,11 @@ max power: {state.dynamic_session.maximum_phase_current}A/{state.dynamic_session
 
         self.battery_progress_bar.setValue(state.battery_percent)
 
-        all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
-
-        self.left_param.setText(all_params_values[self.left_param_active_ind.value])
-        self.right_param.setText(all_params_values[self.right_param_active_ind.value])
-        self.center_param.setText(all_params_values[self.center_param_active_ind.value])
+        self.indicators_changer.fill_indicators(state)
+        #all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
+        #self.left_param.setText(all_params_values[self.left_param_active_ind.value])
+        #self.right_param.setText(all_params_values[self.right_param_active_ind.value])
+        #self.center_param.setText(all_params_values[self.center_param_active_ind.value])
 
         now_time_ms = int(time.time() * 1000)
         lt = time.localtime((state.builded_ts_ms / 1000) if state.builded_ts_ms > 0 else (now_time_ms / 1000))
