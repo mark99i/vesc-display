@@ -47,6 +47,10 @@ class GUIMainMenu:
         return widget
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+            return
+
         self.ui.show()
 
     def click_setting(self, ev):

@@ -45,6 +45,9 @@ class GUIServiceState:
         self.b_close.clicked.connect(self.click_close)
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+
         self.click_update_status()
         self.ui.show()
 

@@ -178,7 +178,7 @@ class WorkerThread(Thread):
                         self.__dynamic_session_need_clear = False
                     if not self.__dynamic_session_need_clear and state.speed < 1:
                         self.__dynamic_session_need_clear = True
-                    self.state.dynamic_session.update(state, override_write_session_track=False, dynamic_session=True)
+                    self.state.dynamic_session.update(state, dynamic_session=True)
 
                 if state.speed > 0:
                     state.wh_km_h = stab(round(state.full_power / state.speed, 1), -99.9, 99.9)

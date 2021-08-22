@@ -151,12 +151,19 @@ class GUIApp:
                     f'{state.esc_a_state.battery_current + state.esc_b_state.battery_current}A'
         self.main_power.setText(power_str)
 
-        self.main_speed_lcd.display(str(round(state.speed, 1)))
+        if Config.speed_as_integer:
+            speed_str = str(int(state.speed))
+            self.main_speed_lcd.setDigitCount(len(speed_str))
+        else:
+            speed_str = str(round(state.speed, 1))
+            self.main_speed_lcd.setDigitCount(3)
 
-        all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
+        self.main_speed_lcd.display(speed_str)
 
-        self.left_param.setText(all_params_values[self.left_param_active_ind.value])
-        self.right_param.setText(all_params_values[self.right_param_active_ind.value])
+        self.indicators_changer.fill_indicators(self, state)
+        #all_params_values = self.indicators_changer.get_indicators_by_state(self, state)
+        #self.left_param.setText(all_params_values[self.left_param_active_ind.value])
+        #self.right_param.setText(all_params_values[self.right_param_active_ind.value])
 
         now_time_ms = int(time.time() * 1000)
 

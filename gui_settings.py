@@ -275,9 +275,17 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "mtemp_insteadof_load":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "write_session":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "write_session_track":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "session_track_average_sec":
+            self.open_int_mod(parameter_name, 1, 5, 60)
         elif parameter_name == "use_gui_lite":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":
+            self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "speed_as_integer":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":
             self.open_int_mod(parameter_name, 5, 0, 1000)
@@ -303,6 +311,9 @@ class GUISettings:
             self.open_int_mod("_odometer", 50, 0, 100000)
 
     def show(self):
+        if self.ui.isVisible():
+            self.ui.window().activateWindow()
+
         self.reload_list()
         self.ui.show()
 

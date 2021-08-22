@@ -3,13 +3,15 @@ import ujson as json
 import requests
 import urllib3
 
-# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "/dev/ttyUSB0", "speed": 115200, "debug_enabled": 0}'
+# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "port:///dev/ttyUSB0?speed=115200", "debug_enabled": 0}'
+# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "pigpio://?tx=21&rx=20&speed=57600", "debug_enabled": 0}'
+# curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/uart/connect' --data '{"path": "tcp://192.168.1.10:65102", "debug_enabled": 0}'
 # curl 'http://127.0.0.1:2002/uart/status'
-# curl 'http://127.0.0.1:2002/vesc/local/id'
-# curl 'http://127.0.0.1:2002/vesc/local/can/scan'
-# curl 'http://127.0.0.1:2002/vescs/command/COMM_FW_VERSION?vesc_id=-1'
-# curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_VALUES'
-# curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_MCCONF'
+# [maybe deprecated] curl 'http://127.0.0.1:2002/vesc/local/id'
+# [maybe deprecated] curl 'http://127.0.0.1:2002/vesc/local/can/scan'
+# [maybe deprecated] curl 'http://127.0.0.1:2002/vescs/command/COMM_FW_VERSION?vesc_id=-1'
+# [maybe deprecated] curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_VALUES'
+# [maybe deprecated] curl 'http://127.0.0.1:2002/vescs/command/COMM_GET_MCCONF'
 # curl -H "Content-Type: application/json" -X POST 'http://127.0.0.1:2002/vescs/command/COMM_GET_VALUES' --data '{"vesc_ids": [-1, 15]}'
 from config import Config
 
@@ -37,7 +39,7 @@ class Network:
     def connect() -> bool:
         try:
 
-            js = {"path": Config.serial_port, "speed": Config.serial_speed, "debug_enabled": bool(Config.service_enable_debug)}
+            js = {"path": Config.serial_vesc_path, "debug_enabled": bool(Config.service_enable_debug)}
             content = Network.session.post(f"{Config.serial_vesc_api}/uart/connect",
                                             headers={'Content-Type': 'application/json'}, json=js,
                                             timeout=Network.net_timeout).content
