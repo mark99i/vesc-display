@@ -22,6 +22,7 @@ class Config:
     esc_b_id: int = -1
 
     write_logs: int = 0
+    speed_as_integer: int = 0
 
     write_session: int = 1
     write_session_track: int = 0

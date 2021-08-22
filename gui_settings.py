@@ -285,6 +285,8 @@ class GUISettings:
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "switch_a_b_esc":
             self.open_int_mod(parameter_name, 1, 0, 1)
+        elif parameter_name == "speed_as_integer":
+            self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "hw_controller_current_limit":
             self.open_int_mod(parameter_name, 5, 0, 1000)
         elif parameter_name == "hw_controller_voltage_offset_mv":
