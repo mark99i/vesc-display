@@ -66,8 +66,8 @@ class GUISession:
             self.close.setDisabled(True)
 
         def show(self):
-            if self.ui.isVisible():
-                self.ui.window().activateWindow()
+            if self.isVisible():
+                self.window().activateWindow()
                 return
 
             QTCommunication.run_func_in_background(self, self.bg_restart_vescs, self.on_restart_ended)
@@ -260,7 +260,7 @@ maximum speed: {session.maximum_speed} km/h
 min/max power: {session.minimum_power}/{session.maximum_power} W
 average battery current: {session.average_battery_current} A
 maximum battery current: {session.maximum_battery_current} A
-min/max phase current: {session.minimum_phase_current}/{session.maximum_battery_current} A
+min/max phase current: {session.minimum_phase_current}/{session.maximum_phase_current} A
 
 watt used: {int(session.watt_hours * dist)} wh, efficiency {round(session.watt_hours, 2)} wh/km
 
