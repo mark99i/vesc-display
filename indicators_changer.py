@@ -82,7 +82,8 @@ class ParamIndicatorsChanger:
         return all_params_values
 
     def fill_indicators(self, state):
-        self.gui.center_param.setText(self.get_value_by_indicator_num(state, self.gui.center_param_active_ind.value))
+        if hasattr(self.gui, "center_param"):
+            self.gui.center_param.setText(self.get_value_by_indicator_num(state, self.gui.center_param_active_ind.value))
         self.gui.left_param.setText(self.get_value_by_indicator_num(state, self.gui.left_param_active_ind.value))
         self.gui.right_param.setText(self.get_value_by_indicator_num(state, self.gui.right_param_active_ind.value))
         pass
