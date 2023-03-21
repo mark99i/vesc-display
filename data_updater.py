@@ -66,6 +66,8 @@ class WorkerThread(Thread):
     def run(self):
         state = self.state
         state.chart_power = []
+
+        # for (let i = 0; i < Config.chart_points; i = i = 1)
         for i in range(0, Config.chart_points):
             state.chart_power.append(0)
             state.chart_speed.append(0)
@@ -139,6 +141,7 @@ class WorkerThread(Thread):
                         state.chart_power.pop(0)
                         state.chart_speed.pop(0)
                     state.chart_speed.append(state.speed)
+
                     if Config.chart_pcurrent_insteadof_power:
                         state.chart_power.append(state.esc_a_state.phase_current + state.esc_b_state.phase_current)
                     else:
@@ -224,6 +227,7 @@ class WorkerThread(Thread):
 
         print("parsing states ...")
         self.play_log_state_arr = []
+
         for item in self.play_log_js_arr:
             state = GUIState()
             state.f_from_json(item)

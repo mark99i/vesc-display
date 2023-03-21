@@ -58,6 +58,7 @@ class GUIApp:
 
     last_menu_event: QMouseEvent = None
     last_uart_status = ""
+    last_speed: float = 0.0
 
     def __init__(self, starter):
         from main import Starter
@@ -106,16 +107,29 @@ class GUIApp:
 
     def show(self): self.ui.show()
 
-    def on_click_lcd(self, event: QMouseEvent): self.main_menu.show()
-    def on_click_uart_settings(self): self.service_status.show()
+    def on_click_lcd(self, event: QMouseEvent):
+        if self.last_speed > 0: return
+        self.main_menu.show()
+    def on_click_uart_settings(self):
+        if self.last_speed > 0: return
+        self.service_status.show()
 
-    def on_click_right_param(self, event: QMouseEvent): self.indicators_changer.show_menu_param_change(event, ButtonPos.RIGHT_PARAM)
-    def on_click_left_param(self, event: QMouseEvent): self.indicators_changer.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
-    def on_click_center_param(self, event: QMouseEvent): self.indicators_changer.show_menu_param_change(event, ButtonPos.CENTER_PARAM)
+    def on_click_right_param(self, event: QMouseEvent):
+        if self.last_speed > 0: return
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.RIGHT_PARAM)
+    def on_click_left_param(self, event: QMouseEvent):
+        if self.last_speed > 0: return
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.LEFT_PARAM)
+    def on_click_center_param(self, event: QMouseEvent):
+        if self.last_speed > 0: return
+        self.indicators_changer.show_menu_param_change(event, ButtonPos.CENTER_PARAM)
 
-    def on_click_battery(self, event: QMouseEvent): self.session_info.show()
+    def on_click_battery(self, event: QMouseEvent):
+        if self.last_speed > 0: return
+        self.session_info.show()
 
     def on_click_session_desc(self, event: QMouseEvent):
+        if self.last_speed > 0: return
         if self.session_description.windowIconText() == "full":
             # switch to last
             self.session_description.setWindowIconText("last")
@@ -167,6 +181,7 @@ max power: {state.dynamic_session.maximum_phase_current}A/{state.dynamic_session
             speed_str = str(round(state.speed, 1))
             self.main_speed_lcd.setDigitCount(3)
 
+        self.last_speed = round(state.speed, 1)
         self.main_speed_lcd.display(speed_str)
 
         self.battery_progress_bar.setValue(state.battery_percent)
