@@ -98,12 +98,13 @@ class WorkerThread(Thread):
                         self.callback(state)
                         continue
 
-                    if Config.switch_a_b_esc > 0:
-                        state.esc_a_state.parse_from_json(result[str(Config.esc_b_id)], "A")
-                        state.esc_b_state.parse_from_json(result["-1"], "B")
-                    else:
+                    if Config.switch_a_b_esc == 0:
                         state.esc_a_state.parse_from_json(result["-1"], "A")
                         state.esc_b_state.parse_from_json(result[str(Config.esc_b_id)], "B")
+                    else:
+                        state.esc_a_state.parse_from_json(result[str(Config.esc_b_id)], "A")
+                        state.esc_b_state.parse_from_json(result["-1"], "B")
+
                 # if not set esc_b_id get info from -1 (local) only
                 else:
                     result = network.Network.COMM_GET_VALUES_multi([-1])
