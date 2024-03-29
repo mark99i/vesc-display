@@ -296,7 +296,7 @@ class GUISettings:
         elif parameter_name == "service_enable_debug":
             self.open_int_mod(parameter_name, 1, 0, 1)
         elif parameter_name == "service_rcv_timeout_ms":
-            self.open_int_mod(parameter_name, 10, 1, 10000)
+            self.open_int_mod(parameter_name, 10, 1, 20000)
         elif parameter_name == "motor_magnets":
             self.open_int_mod(parameter_name, 1, 0, 100)
         elif parameter_name == "wheel_diameter":
