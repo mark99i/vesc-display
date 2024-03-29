@@ -7,6 +7,7 @@ from gui import GUIApp as GUIApp
 from gui_lite import GUIApp as GUIAppLite
 from utils import GUIAppComm, get_script_dir
 from config import Config
+from web.discovery_server import start_discovery_server
 
 class Starter:
     log: str = None
@@ -83,5 +84,6 @@ class Starter:
         self.blocking_start_qt()
 
 if __name__ == "__main__":
+    start_discovery_server()
     Starter().start()
     exit(0)
