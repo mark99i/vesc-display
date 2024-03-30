@@ -200,6 +200,7 @@ def stab(x, in_min, in_max):
     return max(min(in_max, x), in_min)
 
 # noinspection PyUnresolvedReferences
+
 class GUIAppComm(QObject):
     closeApp = pyqtSignal(object)
 

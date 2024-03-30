@@ -21,7 +21,7 @@ class Network:
     session: requests.Session = requests.Session()
     http = urllib3.PoolManager()
 
-    net_timeout = 1     # in seconds
+    net_timeout = 1  # in seconds
 
     @staticmethod
     def get_uart_status() -> dict:
@@ -39,10 +39,10 @@ class Network:
     def connect() -> bool:
         try:
 
-            js = {"path": Config.serial_vesc_path, "debug_enabled": bool(Config.service_enable_debug)}
-            content = Network.session.post(f"{Config.serial_vesc_api}/uart/connect",
-                                            headers={'Content-Type': 'application/json'}, json=js,
-                                            timeout=Network.net_timeout).content
+            js = {"path": Config.serial_vesc_path,
+                  "debug_enabled": bool(Config.service_enable_debug),
+                  "rcv_timeout_ms": Config.service_rcv_timeout_ms}
+            content = Network.session.post(f"{Config.serial_vesc_api}/uart/connect", json=js, timeout=Network.net_timeout).content
             answ = json.loads(content)
             return answ["success"]
         except:
@@ -100,7 +100,6 @@ class Network:
         except:
             return False
 
-
     @staticmethod
     def COMM_FW_VERSION(controller_id: int = -1) -> dict:
         try:
@@ -134,4 +133,3 @@ class Network:
                 return None
         except:
             return None
-
