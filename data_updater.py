@@ -134,8 +134,6 @@ class WorkerThread(Thread):
                     rpm = state.esc_a_state.erpm / (Config.motor_magnets / 2)
                 state.speed = (Config.wheel_diameter / 10) * rpm * 0.001885
 
-                if state.speed > 99: state.speed = 0.0   # TODO: need remove after tests
-
                 # chart points remove last if more Config.chart_*_points and append new value
                 if Config.chart_points > 0:
                     while len(state.chart_power) > Config.chart_points:
